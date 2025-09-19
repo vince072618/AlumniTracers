@@ -26,7 +26,7 @@ const AlumniProfile: React.FC = () => {
     'Teachers Education',
     'Information Technology',
     'Business Administration',
-    'Accounting',
+    'Operations Management',
     'Marketing',
     'Finance',
   ];
