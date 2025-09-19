@@ -29,10 +29,6 @@ const AlumniProfile: React.FC = () => {
     'Accounting',
     'Marketing',
     'Finance',
-    'Engineering',
-    'Nursing',
-    'Psychology',
-    'Criminal Justice',
   ];
 
   const validateForm = (): boolean => {
