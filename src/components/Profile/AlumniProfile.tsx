@@ -3,6 +3,7 @@ import { Edit3, Save, X, User, GraduationCap, Briefcase, Building, MapPin, Phone
 import { useAuth } from '../../contexts/AuthContext';
 import { ProfileUpdateData } from '../../types';
 import { supabase } from '../../lib/supabase';
+import { ActivityLogger } from '../../lib/activityLogger';
 import PasswordChangeForm from './PasswordChangeForm';
 
 const AlumniProfile: React.FC = () => {
@@ -57,6 +58,33 @@ const AlumniProfile: React.FC = () => {
       console.log('Attempting to update profile for user:', user.id);
       console.log('Form data:', formData);
 
+      // Track changes for activity logging
+      const changes: Record<string, any> = {};
+      if (user.firstName !== formData.firstName) {
+        changes.first_name = { old: user.firstName, new: formData.firstName };
+      }
+      if (user.lastName !== formData.lastName) {
+        changes.last_name = { old: user.lastName, new: formData.lastName };
+      }
+      if (user.course !== formData.course) {
+        changes.course = { old: user.course, new: formData.course };
+      }
+      if (user.graduationYear !== formData.graduationYear) {
+        changes.graduation_year = { old: user.graduationYear, new: formData.graduationYear };
+      }
+      if (user.currentJob !== formData.currentJob) {
+        changes.current_job = { old: user.currentJob || '', new: formData.currentJob || '' };
+      }
+      if (user.company !== formData.company) {
+        changes.company = { old: user.company || '', new: formData.company || '' };
+      }
+      if (user.location !== formData.location) {
+        changes.location = { old: user.location || '', new: formData.location || '' };
+      }
+      if (user.phoneNumber !== formData.phoneNumber) {
+        changes.phone_number = { old: user.phoneNumber || '', new: formData.phoneNumber || '' };
+      }
+
       // First check if profile exists
       const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
@@ -89,6 +117,12 @@ const AlumniProfile: React.FC = () => {
           throw insertError;
         }
         console.log('Profile created successfully');
+        
+        // Log profile creation
+        await ActivityLogger.logProfileUpdate({
+          action: 'profile_created',
+          ...changes
+        });
       } else if (fetchError) {
         console.error('Fetch error:', fetchError);
         throw fetchError;
@@ -114,6 +148,11 @@ const AlumniProfile: React.FC = () => {
         throw error;
       }
       console.log('Profile updated successfully');
+      
+      // Log profile update only if there were changes
+      if (Object.keys(changes).length > 0) {
+        await ActivityLogger.logProfileUpdate(changes);
+      }
       }
 
       setIsEditing(false);
