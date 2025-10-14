@@ -23,7 +23,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Partial<RegisterData>>({});
-  const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
   const courses = [
     'Teachers Education',
@@ -68,12 +67,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     try {
       await register(formData);
-      setRegistrationSuccess(true);
+      // Registration successful - user will be automatically logged in
+      // No need to show success message since auth context will handle redirect
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Registration failed. Please try again.';
       setErrors({ email: errorMessage });
@@ -90,34 +90,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
-
-  if (registrationSuccess) {
-    return (
-      <div className="w-full max-w-md mx-auto bg-white rounded-2xl shadow-xl p-8">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Mail className="text-white" size={24} />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Check Your Email</h2>
-          <p className="text-gray-600 mb-6">
-            We've sent a confirmation link to <strong>{formData.email}</strong>. 
-            Please check your email and click the link to verify your account.
-          </p>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p className="text-sm text-blue-800">
-              <strong>Important:</strong> You won't be able to sign in until you confirm your email address.
-            </p>
-          </div>
-          <button
-            onClick={onSwitchToLogin}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-          >
-            Back to Sign In
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
 <div className="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8">

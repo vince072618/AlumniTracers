@@ -169,13 +169,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (data: RegisterData): Promise<void> => {
     setAuthState(prev => ({ ...prev, isLoading: true }));
-    
+
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`
+          data: {
+            first_name: data.firstName,
+            last_name: data.lastName,
+            graduation_year: data.graduationYear,
+            course: data.course,
+            phone_number: data.phoneNumber,
+          }
         }
       });
 
@@ -213,7 +219,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Always set loading to false after registration
       setAuthState(prev => ({ ...prev, isLoading: false }));
-      
+
       // If no session, user needs to confirm email
       if (!authData.session) {
         // Registration successful, but email confirmation required
