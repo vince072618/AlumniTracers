@@ -4,7 +4,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { ProfileUpdateData } from '../../types';
 import { supabase } from '../../lib/supabase';
 import { ActivityLogger } from '../../lib/activityLogger';
-import PasswordChangeForm from './PasswordChangeForm';
 
 const AlumniProfile: React.FC = () => {
   const { user, refreshUser } = useAuth();

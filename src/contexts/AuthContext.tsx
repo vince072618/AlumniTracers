@@ -48,7 +48,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (_event, session) => {
         if (session?.user) {
           handleAuthUser(session.user);
         } else {
@@ -67,6 +67,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const handleAuthUser = async (supabaseUser: SupabaseUser) => {
     try {
       console.log('Handling auth user:', supabaseUser.id);
+      const meta = (supabaseUser as any).user_metadata || {};
       
       // Get user profile from profiles table
       const { data: profile, error } = await supabase
@@ -79,37 +80,66 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // If profile doesn't exist, create a basic one
       if (error && error.code === 'PGRST116') {
-        console.log('Profile not found, creating new profile...');
+        console.log('Profile not found, creating new profile from metadata...');
+        const seed = {
+          id: supabaseUser.id,
+          first_name: meta.first_name || '',
+          last_name: meta.last_name || '',
+          role: 'alumni' as const,
+          graduation_year: meta.graduation_year || new Date().getFullYear(),
+          course: meta.course || '',
+          phone_number: meta.phone_number || '',
+          current_job: meta.current_job || null,
+          company: meta.company || null,
+          location: meta.location || null,
+          created_at: new Date().toISOString(),
+        };
         const { error: insertError } = await supabase
           .from('profiles')
-          .insert({
-            id: supabaseUser.id,
-            first_name: '',
-            last_name: '',
-            role: 'alumni',
-            graduation_year: new Date().getFullYear(),
-            course: '',
-          });
+          .insert(seed);
 
         if (insertError) {
           console.error('Error creating profile:', insertError);
         } else {
           console.log('Profile created successfully');
         }
+      } else if (profile) {
+        // Backfill any missing fields from metadata on existing profile
+        const patch: Record<string, any> = {};
+        if (!profile.first_name && meta.first_name) patch.first_name = meta.first_name;
+        if (!profile.last_name && meta.last_name) patch.last_name = meta.last_name;
+        if (!profile.course && meta.course) patch.course = meta.course;
+        if (!profile.graduation_year && meta.graduation_year) patch.graduation_year = meta.graduation_year;
+        if (!profile.phone_number && meta.phone_number) patch.phone_number = meta.phone_number;
+        if (!profile.current_job && meta.current_job) patch.current_job = meta.current_job;
+        if (!profile.company && meta.company) patch.company = meta.company;
+        if (!profile.location && meta.location) patch.location = meta.location;
+
+        if (Object.keys(patch).length > 0) {
+          console.log('Backfilling profile fields from metadata:', patch);
+          await supabase.from('profiles').update(patch).eq('id', supabaseUser.id);
+        }
       }
+
+      // Re-fetch profile to get the latest data after potential insert/backfill
+      const { data: finalProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', supabaseUser.id)
+        .single();
 
       const user: User = {
         id: supabaseUser.id,
         email: supabaseUser.email || '',
-        firstName: profile?.first_name || '',
-        lastName: profile?.last_name || '',
+        firstName: finalProfile?.first_name || '',
+        lastName: finalProfile?.last_name || '',
         role: 'alumni',
-        graduationYear: profile?.graduation_year || new Date().getFullYear(),
-        course: profile?.course || '',
-        currentJob: profile?.current_job || '',
-        company: profile?.company || '',
-        location: profile?.location || '',
-        phoneNumber: profile?.phone_number || '',
+        graduationYear: finalProfile?.graduation_year || new Date().getFullYear(),
+        course: finalProfile?.course || '',
+        currentJob: finalProfile?.current_job || '',
+        company: finalProfile?.company || '',
+        location: finalProfile?.location || '',
+        phoneNumber: finalProfile?.phone_number || '',
         isVerified: supabaseUser.email_confirmed_at !== null,
         createdAt: new Date(supabaseUser.created_at),
       };
@@ -190,22 +220,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       if (authData.user) {
-        // Create user profile
+        // Create or update user profile (id is PK)
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert({
+          .upsert({
             id: authData.user.id,
             first_name: data.firstName,
             last_name: data.lastName,
             role: 'alumni',
             graduation_year: data.graduationYear,
             course: data.course,
-            phone_number: data.phoneNumber,
+            phone_number: data.phoneNumber || null,
             created_at: new Date().toISOString(),
-          });
+          }, { onConflict: 'id' });
 
         if (profileError) {
-          console.error('Error creating profile:', profileError);
+          console.error('Error upserting profile:', profileError);
           // Don't throw here as the user is already created
         }
       }
