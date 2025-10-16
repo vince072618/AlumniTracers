@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Header from '../Layout/Header';
 import Sidebar from '../Layout/Sidebar';
 import AlumniProfile from '../Profile/AlumniProfile';
-import ActivityLogs from '../Profile/ActivityLogs';
 import PasswordChangeForm from '../Profile/PasswordChangeForm';
 
 const Dashboard: React.FC = () => {
@@ -12,7 +11,7 @@ const Dashboard: React.FC = () => {
   // Close mobile menu when screen size changes to desktop
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 768) { // md breakpoint
+      if (window.innerWidth >= 768) {
         setIsMobileMenuOpen(false);
       }
     };
@@ -33,13 +32,6 @@ const Dashboard: React.FC = () => {
     switch (activeTab) {
       case 'profile':
         return <AlumniProfile />;
-      case 'activity':
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Activity Logs</h2>
-            <ActivityLogs />
-          </div>
-        );
       case 'password':
         return (
           <div className="space-y-6">
