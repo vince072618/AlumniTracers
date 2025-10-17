@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Mail, Lock, Loader2, } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { LoginData } from '../../types';
@@ -17,6 +17,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [errors, setErrors] = useState<Partial<LoginData>>({});
+  const [showRegisteredAlert, setShowRegisteredAlert] = useState(false);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<LoginData> = {};
@@ -74,6 +75,19 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
       />
     );
   }
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('justRegistered') === '1') {
+        setShowRegisteredAlert(true);
+        localStorage.removeItem('justRegistered');
+        const timer = setTimeout(() => setShowRegisteredAlert(false), 6000);
+        return () => clearTimeout(timer);
+      }
+    } catch (e) {
+      // ignore storage errors
+    }
+  }, []);
   return (
    <div className="w-full max-w-md mx-auto bg-white rounded-2xl shadow-xl p-8">
   <div className="text-center mb-8">
@@ -87,6 +101,20 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
     <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h2>
     <p className="text-gray-600">Sign in to access your alumni portal</p>
   </div>
+      {showRegisteredAlert && (
+        <div className="max-w-md mx-auto mb-4 bg-blue-50 border border-blue-300 text-blue-900 px-4 py-3 rounded-lg relative" role="status" aria-live="polite">
+          <div className="flex items-start">
+            <div className="flex-1">Registration successful. Check your email to verify your account, then sign in.</div>
+            <button
+              aria-label="Close registration alert"
+              onClick={() => setShowRegisteredAlert(false)}
+              className="text-blue-700 font-bold ml-3"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">

@@ -72,8 +72,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
 
     try {
       await register(formData);
-      // Registration successful - user will be automatically logged in
-      // No need to show success message since auth context will handle redirect
+      // Registration successful - set a flag so the login view can show a success alert
+      try {
+        localStorage.setItem('justRegistered', '1');
+      } catch (e) {
+        // ignore storage errors
+      }
+      // Switch to login view so the user can sign in
+      onSwitchToLogin();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Registration failed. Please try again.';
       setErrors({ email: errorMessage });
