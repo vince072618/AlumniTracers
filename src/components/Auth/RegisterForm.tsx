@@ -25,12 +25,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   const [errors, setErrors] = useState<Partial<RegisterData>>({});
 
   const courses = [
-    'Teachers Education',
-    'Information Technology',
-    'Business Administration',
-    'Accounting',
-    'Marketing',
-    'Finance',
+    'ICS',
+    'IBM',
+    'ITE',
   ];
 
   const validateForm = (): boolean => {
