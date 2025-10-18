@@ -26,8 +26,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
 
   const courses = [
     'BSIT',
-    'TEP BESEd - English',
-    'TEP BESEd - Math',
+    'TEP BSEd - English',
+    'TEP BSEd - Math',
     'TEP - BEEd',
     'TEP - BECEd',
     'BSBA - Financial Management',
