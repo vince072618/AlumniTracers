@@ -23,6 +23,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Partial<RegisterData>>({});
+  // NEW: terms state
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [termsError, setTermsError] = useState('');
 
   const courses = [
     'BSIT',
@@ -63,8 +67,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
       newErrors.course = 'Course is required';
     }
 
+    // NEW: terms validation
+    if (!termsAccepted) {
+      setTermsError('You must accept the Terms and Conditions');
+    } else {
+      setTermsError('');
+    }
+
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return Object.keys(newErrors).length === 0 && termsAccepted;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -296,6 +307,33 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
           </div>
         </div>
 
+        {/* NEW: Terms & Conditions checkbox */}
+        <div>
+          <div className="flex items-start gap-3">
+            <input
+              id="terms"
+              type="checkbox"
+              checked={termsAccepted}
+              onChange={(e) => {
+                setTermsAccepted(e.target.checked);
+                if (e.target.checked) setTermsError('');
+              }}
+              className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <label htmlFor="terms" className="text-sm text-gray-700">
+              I agree to the{' '}
+              <button
+                type="button"
+                onClick={() => setIsTermsOpen(true)}
+                className="text-blue-600 hover:text-blue-700 underline"
+              >
+                Terms and Conditions
+              </button>
+            </label>
+          </div>
+          {termsError && <p className="mt-1 text-sm text-red-600">{termsError}</p>}
+        </div>
+
         <button
           type="submit"
           disabled={isLoading}
@@ -311,6 +349,47 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
           )}
         </button>
       </form>
+
+      {/* NEW: Terms modal */}
+      {isTermsOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
+            <h3 className="text-lg font-semibold mb-3">Terms and Conditions</h3>
+            <div className="max-h-72 overflow-y-auto space-y-3 text-sm text-gray-700">
+              <p>
+                By creating an account, you agree to our policies on data collection and usage for
+                alumni engagement, communication, and analytics. You confirm the information you
+                provide is accurate and that you have read and agree to our Privacy Policy.
+              </p>
+              <p>
+                You may request deletion of your account and associated data by contacting support.
+                Continued use constitutes acceptance of any future updates to these terms.
+              </p>
+              {/* Replace with your real terms content or fetch from a dedicated page */}
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsTermsOpen(false)}
+                className="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTermsAccepted(true);
+                  setTermsError('');
+                  setIsTermsOpen(false);
+                }}
+                className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+              >
+                I Agree
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 text-center">
         <p className="text-gray-600">
