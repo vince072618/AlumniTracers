@@ -274,7 +274,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
 
           <div>
             <label htmlFor="graduationYear" className="block text-sm font-medium text-gray-700 mb-2">
-              Graduation Year *
+              Year Graduated *
             </label>
             <input
               type="number"

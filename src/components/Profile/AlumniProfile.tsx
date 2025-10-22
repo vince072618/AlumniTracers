@@ -19,27 +19,49 @@ const AlumniProfile: React.FC = () => {
     location: user?.location || '',
     phoneNumber: user?.phoneNumber || '',
   });
-  const [errors, setErrors] = useState<Partial<ProfileUpdateData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof ProfileUpdateData, string>>>({});
   const [successMessage, setSuccessMessage] = useState('');
 
   const courses = [
-    'Teachers Education',
-    'Information Technology',
-    'Business Administration',
-    'Operations Management',
-    'Marketing',
-    'Finance',
+     'BSIT',
+    'TEP BSEd - English',
+    'TEP BSEd - Math',
+    'TEP - BEEd',
+    'TEP - BECEd',
+    'BSBA - Financial Management',
+    'BSBA - Marketing Management',
+    'BSBA - Operations Management',
   ];
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<ProfileUpdateData> = {};
+    const newErrors: Partial<Record<keyof ProfileUpdateData, string>> = {};
 
+    // Check every field for completion
     if (!formData.firstName) newErrors.firstName = 'First name is required';
     if (!formData.lastName) newErrors.lastName = 'Last name is required';
     if (!formData.course) newErrors.course = 'Course is required';
+    if (!formData.graduationYear) newErrors.graduationYear = 'Graduation year is required';
+    if (!formData.currentJob) newErrors.currentJob = 'Current job is required';
+    if (!formData.company) newErrors.company = 'Company is required';
+    if (!formData.location) newErrors.location = 'Location is required';
+    if (!formData.phoneNumber) newErrors.phoneNumber = 'Phone number is required';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  // Add this helper function to check if form is complete
+  const isFormComplete = (): boolean => {
+    return Boolean(
+      formData.firstName &&
+      formData.lastName &&
+      formData.course &&
+      formData.graduationYear &&
+      formData.currentJob &&
+      formData.company &&
+      formData.location &&
+      formData.phoneNumber
+    );
   };
 
   const handleSave = async () => {
@@ -240,8 +262,8 @@ const AlumniProfile: React.FC = () => {
               </button>
               <button
                 onClick={handleSave}
-                disabled={isLoading}
-                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                disabled={isLoading || !isFormComplete()}
+                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <Loader2 className="animate-spin mr-2" size={16} />
@@ -268,7 +290,7 @@ const AlumniProfile: React.FC = () => {
               <h3 className="text-xl font-bold text-gray-900">
                 {user?.firstName} {user?.lastName}
               </h3>
-              <p className="text-gray-600">{user?.course} • Class of {user?.graduationYear}</p>
+              <p className="text-gray-600">{user?.course} • Year Graduated {user?.graduationYear}</p>
               <div className="flex items-center mt-2">
                 <Mail size={14} className="text-gray-400 mr-2" />
                 <span className="text-sm text-gray-600">{user?.email}</span>
@@ -280,7 +302,7 @@ const AlumniProfile: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                First Name *
+                First Name <span className="text-red-500">*</span>
               </label>
               {isEditing ? (
                 <div className="relative">
@@ -291,20 +313,24 @@ const AlumniProfile: React.FC = () => {
                     value={formData.firstName}
                     onChange={handleChange}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                      errors.firstName ? 'border-red-500' : 'border-gray-300'
+                      errors.firstName || !formData.firstName ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="Enter first name"
                   />
+                  {(!formData.firstName || errors.firstName) && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.firstName || "Required field"}
+                    </p>
+                  )}
                 </div>
               ) : (
                 <p className="py-3 px-4 bg-gray-50 rounded-lg text-gray-900">{user?.firstName}</p>
               )}
-              {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Last Name *
+                Last Name <span className="text-red-500">*</span>
               </label>
               {isEditing ? (
                 <div className="relative">
@@ -315,20 +341,24 @@ const AlumniProfile: React.FC = () => {
                     value={formData.lastName}
                     onChange={handleChange}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                      errors.lastName ? 'border-red-500' : 'border-gray-300'
+                      errors.lastName || !formData.lastName ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="Enter last name"
                   />
+                  {(!formData.lastName || errors.lastName) && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.lastName || "Required field"}
+                    </p>
+                  )}
                 </div>
               ) : (
                 <p className="py-3 px-4 bg-gray-50 rounded-lg text-gray-900">{user?.lastName}</p>
               )}
-              {errors.lastName && <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Course/Program *
+                Course/Program <span className="text-red-500">*</span>
               </label>
               {isEditing ? (
                 <div className="relative">
@@ -338,7 +368,7 @@ const AlumniProfile: React.FC = () => {
                     value={formData.course}
                     onChange={handleChange}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                      errors.course ? 'border-red-500' : 'border-gray-300'
+                      errors.course || !formData.course ? 'border-red-500' : 'border-gray-300'
                     }`}
                   >
                     <option value="">Select your course</option>
@@ -346,16 +376,20 @@ const AlumniProfile: React.FC = () => {
                       <option key={course} value={course}>{course}</option>
                     ))}
                   </select>
+                  {(!formData.course || errors.course) && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.course || "Required field"}
+                    </p>
+                  )}
                 </div>
               ) : (
                 <p className="py-3 px-4 bg-gray-50 rounded-lg text-gray-900">{user?.course || 'Not specified'}</p>
               )}
-              {errors.course && <p className="mt-1 text-sm text-red-600">{errors.course}</p>}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Graduation Year
+                Year Graduated <span className="text-red-500">*</span>
               </label>
               {isEditing ? (
                 <div className="relative">
@@ -369,6 +403,11 @@ const AlumniProfile: React.FC = () => {
                     max="2030"
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                   />
+                  {(!formData.graduationYear || errors.graduationYear) && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.graduationYear || "Required field"}
+                    </p>
+                  )}
                 </div>
               ) : (
                 <p className="py-3 px-4 bg-gray-50 rounded-lg text-gray-900">{user?.graduationYear}</p>
@@ -377,7 +416,7 @@ const AlumniProfile: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Current Job
+                Current Job <span className="text-red-500">*</span>
               </label>
               {isEditing ? (
                 <div className="relative">
@@ -390,6 +429,11 @@ const AlumniProfile: React.FC = () => {
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     placeholder="Enter your current job title"
                   />
+                  {(!formData.currentJob || errors.currentJob) && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.currentJob || "Required field"}
+                    </p>
+                  )}
                 </div>
               ) : (
                 <p className="py-3 px-4 bg-gray-50 rounded-lg text-gray-900">{user?.currentJob || 'Not specified'}</p>
@@ -398,7 +442,7 @@ const AlumniProfile: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Company
+                Company <span className="text-red-500">*</span>
               </label>
               {isEditing ? (
                 <div className="relative">
@@ -411,6 +455,11 @@ const AlumniProfile: React.FC = () => {
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     placeholder="Enter your company name"
                   />
+                  {(!formData.company || errors.company) && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.company || "Required field"}
+                    </p>
+                  )}
                 </div>
               ) : (
                 <p className="py-3 px-4 bg-gray-50 rounded-lg text-gray-900">{user?.company || 'Not specified'}</p>
@@ -419,7 +468,7 @@ const AlumniProfile: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Location
+                Location <span className="text-red-500">*</span>
               </label>
               {isEditing ? (
                 <div className="relative">
@@ -432,6 +481,11 @@ const AlumniProfile: React.FC = () => {
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     placeholder="Enter your current location"
                   />
+                  {(!formData.location || errors.location) && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.location || "Required field"}
+                    </p>
+                  )}
                 </div>
               ) : (
                 <p className="py-3 px-4 bg-gray-50 rounded-lg text-gray-900">{user?.location || 'Not specified'}</p>
@@ -440,7 +494,7 @@ const AlumniProfile: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number
+                Phone Number <span className="text-red-500">*</span>
               </label>
               {isEditing ? (
                 <div className="relative">
@@ -453,6 +507,11 @@ const AlumniProfile: React.FC = () => {
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     placeholder="Enter your phone number"
                   />
+                  {(!formData.phoneNumber || errors.phoneNumber) && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.phoneNumber || "Required field"}
+                    </p>
+                  )}
                 </div>
               ) : (
                 <p className="py-3 px-4 bg-gray-50 rounded-lg text-gray-900">{user?.phoneNumber || 'Not specified'}</p>
