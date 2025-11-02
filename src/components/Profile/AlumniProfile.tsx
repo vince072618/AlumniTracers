@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CreditCard as Edit3, Save, X, User, GraduationCap, Briefcase, Building, MapPin, Phone, Mail, Calendar, Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ProfileUpdateData } from '../../types';
@@ -7,6 +8,7 @@ import { ActivityLogger } from '../../lib/activityLogger';
 
 const AlumniProfile: React.FC = () => {
   const { user, refreshUser } = useAuth();
+  const { showQuickProfileModal, setShowQuickProfileModal } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   // parse existing location into locationScope + region + specificLocation when possible
@@ -49,6 +51,156 @@ const AlumniProfile: React.FC = () => {
     specificLocation: existingLocation.specificLocation || '',
     phoneNumber: user?.phoneNumber || '',
   });
+  // modal to collect quick profile questions when entering edit mode
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [modalLocationScope, setModalLocationScope] = useState<any>(existingLocation.locationScope || 'Philippines');
+  const [modalRegion, setModalRegion] = useState<string>(existingLocation.region || '');
+  const [modalSpecificLocation, setModalSpecificLocation] = useState<string>(existingLocation.specificLocation || '');
+  const [modalSkills, setModalSkills] = useState<string>('');
+  const [modalEmploymentStatus, setModalEmploymentStatus] = useState<'employed' | 'unemployed'>((user?.currentJob && user.currentJob.length > 0) ? 'employed' : 'unemployed');
+  const [modalSubmitting, setModalSubmitting] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
+
+  const handleEditClick = () => {
+    // open the edit form and show the modal to collect quick info
+    setIsEditing(true);
+    setShowEditModal(true);
+    setModalLocationScope(formData.locationScope || 'Philippines');
+    setModalRegion(formData.region || '');
+    setModalSpecificLocation(formData.specificLocation || '');
+    setModalSkills('');
+    setModalEmploymentStatus((formData.currentJob && formData.currentJob.length > 0) ? 'employed' : 'unemployed');
+  };
+
+  const handleModalSubmit = async () => {
+    setModalError(null);
+    setModalSubmitting(true);
+
+    try {
+      if (!user?.id) throw new Error('Not authenticated');
+
+      // merge modal answers into the main form data (location fields)
+      setFormData(prev => ({
+        ...prev,
+        locationScope: modalLocationScope,
+        region: modalRegion,
+        specificLocation: modalSpecificLocation,
+      }));
+
+      // build payload for user_profile_questions
+      const payload: Record<string, any> = {
+        user_id: user.id,
+        country: modalLocationScope === 'International' ? modalSpecificLocation : 'Philippines',
+        region: modalLocationScope === 'Philippines' ? modalRegion : (modalLocationScope === 'International' ? 'International' : null),
+        province: modalLocationScope === 'Philippines' ? modalSpecificLocation : null,
+        skills: modalSkills || null,
+        employment_status: modalEmploymentStatus === 'employed' ? 'Employed' : 'Unemployed',
+        created_at: new Date().toISOString(),
+      };
+
+      // Check if a row already exists for this user
+      const { data: existingRow, error: checkErr } = await supabase
+        .from('user_profile_questions')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (checkErr && (checkErr as any).code !== 'PGRST116') {
+        // Unexpected error (RLS or network), surface it
+        throw checkErr;
+      }
+
+      if (existingRow && existingRow.id) {
+        // update existing
+        const { error: updateErr } = await supabase
+          .from('user_profile_questions')
+          .update({
+            country: payload.country,
+            region: payload.region,
+            province: payload.province,
+            skills: payload.skills,
+            employment_status: payload.employment_status,
+          })
+          .eq('user_id', user.id);
+
+        if (updateErr) throw updateErr;
+      } else {
+        // insert new row
+        const { error: insertErr } = await supabase
+          .from('user_profile_questions')
+          .insert(payload);
+
+        if (insertErr) throw insertErr;
+      }
+
+      // update profiles.location to keep legacy data in sync
+      let combinedLocation = '';
+      if (modalLocationScope === 'Philippines') {
+        combinedLocation = modalRegion ? `${modalRegion} - ${modalSpecificLocation}` : (formData.location || '');
+      } else {
+        combinedLocation = `International - ${modalSpecificLocation}`;
+      }
+
+      const { error: profileErr } = await supabase
+        .from('profiles')
+        .update({ location: combinedLocation || null })
+        .eq('id', user.id);
+
+      if (profileErr) {
+        // Non-fatal for the modal, but surface to user
+        console.warn('Failed to update profiles.location:', profileErr);
+      }
+
+      // close modal and prevent it from showing again
+      setShowEditModal(false);
+      try { setShowQuickProfileModal && setShowQuickProfileModal(false); } catch {}
+
+      // refresh user context so UI shows updated data
+      if (refreshUser) await refreshUser();
+    } catch (err: any) {
+      console.error('Error submitting quick profile answers:', err);
+      setModalError(err?.message || JSON.stringify(err));
+    } finally {
+      setModalSubmitting(false);
+    }
+  };
+
+  const handleModalSkip = () => {
+    // user skipped; just close modal and keep editing
+    setShowEditModal(false);
+    try { setShowQuickProfileModal && setShowQuickProfileModal(false); } catch {}
+  };
+
+  // Prevent background scrolling when modal is open
+  React.useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const prev = document.body.style.overflow;
+    if (showEditModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = prev;
+    }
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [showEditModal]);
+
+  // If AuthContext requested the quick-profile modal (post-login), open it once
+  React.useEffect(() => {
+    if (showQuickProfileModal) {
+      setIsEditing(true);
+      setShowEditModal(true);
+      // clear the flag so it doesn't show again repeatedly
+      setShowQuickProfileModal(false);
+      // initialize modal fields from current formData
+      setModalLocationScope(formData.locationScope || 'Philippines');
+      setModalRegion(formData.region || '');
+      setModalSpecificLocation(formData.specificLocation || '');
+      setModalSkills('');
+      setModalEmploymentStatus((formData.currentJob && formData.currentJob.length > 0) ? 'employed' : 'unemployed');
+    }
+    // Only run when the flag changes
+  }, [showQuickProfileModal]);
   const [errors, setErrors] = useState<Partial<Record<keyof ProfileUpdateData, string>>>({});
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -295,7 +447,7 @@ const AlumniProfile: React.FC = () => {
           )}
           {!isEditing ? (
               <button
-                onClick={() => setIsEditing(true)}
+                onClick={handleEditClick}
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <Edit3 size={16} className="mr-2" />
@@ -326,6 +478,85 @@ const AlumniProfile: React.FC = () => {
           )}
         </div>
       </div>
+
+  {showEditModal && typeof document !== 'undefined' ? createPortal(
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black opacity-40" onClick={handleModalSkip} />
+          <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-lg w-full max-w-2xl mx-4 p-6">
+            <div className="flex items-start justify-between">
+              <h3 className="text-lg font-semibold">Quick Profile Questions</h3>
+              <button onClick={handleModalSkip} aria-label="Close" className="text-gray-500 hover:text-gray-700">
+                <X />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">What is your current location?</label>
+                <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <select value={modalLocationScope} onChange={(e) => setModalLocationScope(e.target.value)} className="col-span-1 border rounded px-3 py-2">
+                    <option value="Philippines">Philippines</option>
+                    <option value="International">Outside the country (International)</option>
+                  </select>
+                  {modalLocationScope === 'Philippines' && (
+                    <select value={modalRegion} onChange={(e) => setModalRegion(e.target.value)} className="col-span-1 border rounded px-3 py-2">
+                      <option value="">Select region</option>
+                      <option value="Region I">Region I</option>
+                      <option value="Region 2">Region 2</option>
+                      <option value="Region 3">Region 3</option>
+                      <option value="Region 4A">Region 4A</option>
+                      <option value="Region 4B">Region 4B</option>
+                      <option value="Region 5">Region 5</option>
+                      <option value="Region 6">Region 6</option>
+                      <option value="Region 7">Region 7</option>
+                      <option value="Region 8">Region 8</option>
+                      <option value="Region 9">Region 9</option>
+                      <option value="Region 10">Region 10</option>
+                      <option value="Region 11">Region 11</option>
+                      <option value="Region 12">Region 12</option>
+                      <option value="NCR">NCR</option>
+                      <option value="CAR">CAR</option>
+                      <option value="ARMM">ARMM</option>
+                    </select>
+                  )}
+                  <input value={modalSpecificLocation} onChange={(e) => setModalSpecificLocation(e.target.value)} placeholder={modalLocationScope === 'International' ? 'Country / City (e.g. Singapore)' : 'City / Province (e.g. Quezon City)'} className="col-span-2 md:col-span-1 border rounded px-3 py-2" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">What skills did you gain from the course you completed?</label>
+                <textarea value={modalSkills} onChange={(e) => setModalSkills(e.target.value)} rows={3} className="w-full mt-2 border rounded px-3 py-2" placeholder="e.g. data analysis, teaching strategies, UI design" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Are you currently employed or unemployed?</label>
+                <div className="mt-2 flex items-center space-x-4">
+                  <label className="inline-flex items-center">
+                    <input type="radio" name="employment" value="employed" checked={modalEmploymentStatus === 'employed'} onChange={() => setModalEmploymentStatus('employed')} className="form-radio" />
+                    <span className="ml-2">Employed</span>
+                  </label>
+                  <label className="inline-flex items-center">
+                    <input type="radio" name="employment" value="unemployed" checked={modalEmploymentStatus === 'unemployed'} onChange={() => setModalEmploymentStatus('unemployed')} className="form-radio" />
+                    <span className="ml-2">Unemployed</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-3">
+              <button onClick={handleModalSkip} className="px-4 py-2 bg-gray-200 rounded" disabled={modalSubmitting}>Skip</button>
+              <button onClick={handleModalSubmit} className="px-4 py-2 bg-blue-600 text-white rounded flex items-center" disabled={modalSubmitting} aria-disabled={modalSubmitting}>
+                {modalSubmitting ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
+                {modalSubmitting ? 'Submitting...' : 'Apply'}
+              </button>
+            </div>
+            {modalError && (
+              <p className="mt-3 text-sm text-red-600">{modalError}</p>
+            )}
+          </div>
+        </div>,
+        document.body
+      ) : null}
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="p-6">

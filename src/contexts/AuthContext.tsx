@@ -9,6 +9,9 @@ interface AuthContextType extends AuthState {
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  // show a quick profile modal for post-login flow
+  showQuickProfileModal: boolean;
+  setShowQuickProfileModal: (v: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +34,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading: true,
     isAuthenticated: false,
   });
+
+  // Flag to indicate whether the quick-profile modal should be shown after login
+  const [showQuickProfileModal, setShowQuickProfileModal] = useState(false);
 
   useEffect(() => {
     // Get initial session
@@ -151,6 +157,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isLoading: false,
         isAuthenticated: true,
       });
+
+      // Check if the user has already answered the quick profile questions.
+      // If not, ask the UI to show the modal once.
+      try {
+        const { data: existing, error: existingErr } = await supabase
+          .from('user_profile_questions')
+          .select('id')
+          .eq('user_id', supabaseUser.id)
+          .single();
+
+        // If no row found (PostgREST returns PGRST116 for single when not found), show modal
+        if (existingErr && (existingErr as any).code === 'PGRST116') {
+          setShowQuickProfileModal(true);
+        } else if (!existing) {
+          setShowQuickProfileModal(true);
+        } else {
+          // user already has answered questions; ensure modal is not shown
+          setShowQuickProfileModal(false);
+        }
+      } catch (e) {
+        // If the query fails (RLS or network), don't block login — keep modal hidden
+        console.warn('Could not determine quick profile status:', e);
+        setShowQuickProfileModal(false);
+      }
     } catch (error) {
       console.error('Error in handleAuthUser:', error);
       setAuthState({
@@ -284,6 +314,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     logout,
     refreshUser,
+    showQuickProfileModal,
+    setShowQuickProfileModal,
   };
 
   return (
