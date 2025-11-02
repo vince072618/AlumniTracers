@@ -9,6 +9,31 @@ const AlumniProfile: React.FC = () => {
   const { user, refreshUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  // parse existing location into locationScope + region + specificLocation when possible
+  const parseLocation = (loc?: string) => {
+    const knownRegions = [
+      'Region I','Region 2','Region 3','Region 4A','Region 4B','Region 5','Region 6','Region 7','Region 8','Region 9','Region 10','Region 11','Region 12','NCR','CAR','ARMM'
+    ];
+
+    if (!loc) return { locationScope: 'Philippines', region: '', specificLocation: '' };
+    const parts = loc.split(' - ').map(p => p.trim()).filter(Boolean);
+
+    // Explicit International format: "International - Country"
+    if (parts[0] === 'International') {
+      return { locationScope: 'International' as const, region: 'International', specificLocation: parts.slice(1).join(' - ') };
+    }
+
+    // If first part matches a known PH region, treat as Philippines
+    if (parts.length >= 2 && knownRegions.includes(parts[0])) {
+      return { locationScope: 'Philippines' as const, region: parts[0], specificLocation: parts.slice(1).join(' - ') };
+    }
+
+    // Fallback: treat as International (user likely stored a free-text country/city)
+    return { locationScope: 'International' as const, region: '', specificLocation: loc };
+  };
+
+  const existingLocation = parseLocation(user?.location);
+
   const [formData, setFormData] = useState<ProfileUpdateData>({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -16,7 +41,12 @@ const AlumniProfile: React.FC = () => {
     course: user?.course || '',
     currentJob: user?.currentJob || '',
     company: user?.company || '',
+    // store legacy combined location here as well
     location: user?.location || '',
+    // new structured fields for UI
+    locationScope: (existingLocation.locationScope as any) || 'Philippines',
+    region: existingLocation.region || '',
+    specificLocation: existingLocation.specificLocation || '',
     phoneNumber: user?.phoneNumber || '',
   });
   const [errors, setErrors] = useState<Partial<Record<keyof ProfileUpdateData, string>>>({});
@@ -43,7 +73,9 @@ const AlumniProfile: React.FC = () => {
     if (!formData.graduationYear) newErrors.graduationYear = 'Graduation year is required';
     if (!formData.currentJob) newErrors.currentJob = 'Current job is required';
     if (!formData.company) newErrors.company = 'Company is required';
-    if (!formData.location) newErrors.location = 'Location is required';
+  // If in Philippines require region; always require specific location
+  if (formData.locationScope === 'Philippines' && !formData.region) newErrors.region = 'Region is required';
+  if (!formData.specificLocation) newErrors.specificLocation = 'Please specify your city/province or country';
     if (!formData.phoneNumber) newErrors.phoneNumber = 'Phone number is required';
 
     setErrors(newErrors);
@@ -59,7 +91,9 @@ const AlumniProfile: React.FC = () => {
       formData.graduationYear &&
       formData.currentJob &&
       formData.company &&
-      formData.location &&
+      // region only required when in the Philippines
+      (formData.locationScope === 'Philippines' ? formData.region : true) &&
+      formData.specificLocation &&
       formData.phoneNumber
     );
   };
@@ -99,8 +133,17 @@ const AlumniProfile: React.FC = () => {
       if (user.company !== formData.company) {
         changes.company = { old: user.company || '', new: formData.company || '' };
       }
-      if (user.location !== formData.location) {
-        changes.location = { old: user.location || '', new: formData.location || '' };
+      // compute combined location string for storage
+      let combinedLocation = '';
+      if (formData.locationScope === 'Philippines') {
+        combinedLocation = formData.region ? `${formData.region} - ${formData.specificLocation}` : (formData.location || '');
+      } else {
+        // International: store with explicit prefix for clarity
+        combinedLocation = `International - ${formData.specificLocation}`;
+      }
+
+      if (user.location !== combinedLocation) {
+        changes.location = { old: user.location || '', new: combinedLocation || '' };
       }
       if (user.phoneNumber !== formData.phoneNumber) {
         changes.phone_number = { old: user.phoneNumber || '', new: formData.phoneNumber || '' };
@@ -128,7 +171,7 @@ const AlumniProfile: React.FC = () => {
             course: formData.course,
             current_job: formData.currentJob || null,
             company: formData.company || null,
-            location: formData.location || null,
+            location: combinedLocation || null,
             phone_number: formData.phoneNumber || null,
             role: 'alumni',
           });
@@ -159,7 +202,7 @@ const AlumniProfile: React.FC = () => {
           course: formData.course,
           current_job: formData.currentJob || null,
           company: formData.company || null,
-          location: formData.location || null,
+          location: combinedLocation || null,
           phone_number: formData.phoneNumber || null,
         })
         .eq('id', user.id);
@@ -218,6 +261,9 @@ const AlumniProfile: React.FC = () => {
       currentJob: user?.currentJob || '',
       company: user?.company || '',
       location: user?.location || '',
+      locationScope: (existingLocation.locationScope as any) || 'Philippines',
+      region: existingLocation.region || '',
+      specificLocation: existingLocation.specificLocation || '',
       phoneNumber: user?.phoneNumber || '',
     });
     setErrors({});
@@ -230,6 +276,10 @@ const AlumniProfile: React.FC = () => {
       ...prev, 
       [name]: name === 'graduationYear' ? parseInt(value) : value 
     }));
+    // If user switches scope to International clear region
+    if (name === 'locationScope' && value === 'International') {
+      setFormData(prev => ({ ...prev, region: '' }));
+    }
     if (errors[name as keyof ProfileUpdateData]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -471,24 +521,80 @@ const AlumniProfile: React.FC = () => {
                 Location <span className="text-red-500">*</span>
               </label>
               {isEditing ? (
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                  <input
-                    type="text"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                    placeholder="Enter your current location"
-                  />
-                  {(!formData.location || errors.location) && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {errors.location || "Required field"}
-                    </p>
+                <>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                    <select
+                      name="locationScope"
+                      value={formData.locationScope as any}
+                      onChange={handleChange}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                        errors.region ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
+                      <option value="Philippines">In the Philippines</option>
+                      <option value="International">Outside the country (International)</option>
+                    </select>
+                  </div>
+
+                  {formData.locationScope === 'Philippines' && (
+                    <div className="relative mt-3">
+                      <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                      <select
+                        name="region"
+                        value={formData.region}
+                        onChange={handleChange}
+                        className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                          errors.region || !formData.region ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      >
+                        <option value="">Select your region</option>
+                        <option value="Region I">Region I</option>
+                        <option value="Region 2">Region 2</option>
+                        <option value="Region 3">Region 3</option>
+                        <option value="Region 5">Region 5</option>
+                        <option value="Region 6">Region 6</option>
+                        <option value="Region 7">Region 7</option>
+                        <option value="Region 8">Region 8</option>
+                        <option value="Region 9">Region 9</option>
+                        <option value="Region 10">Region 10</option>
+                        <option value="Region 11">Region 11</option>
+                        <option value="Region 12">Region 12</option>
+                        <option value="NCR">NCR</option>
+                        <option value="CAR">CAR</option>
+                        <option value="ARMM">ARMM</option>
+                      </select>
+                      {(errors.region || !formData.region) && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {errors.region || "Required field"}
+                        </p>
+                      )}
+                    </div>
                   )}
-                </div>
+
+                  <div className="mt-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Specific location <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      name="specificLocation"
+                      value={formData.specificLocation}
+                      onChange={handleChange}
+                      className={`w-full pl-3 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                        errors.specificLocation || !formData.specificLocation ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder={formData.locationScope === 'International' ? 'Country / City (e.g. Singapore)' : 'City / Province (e.g. Quezon City)'}
+                    />
+                    {(errors.specificLocation || !formData.specificLocation) && (
+                      <p className="mt-1 text-sm text-red-600">{errors.specificLocation || 'Required field'}</p>
+                    )}
+                  </div>
+                </>
               ) : (
-                <p className="py-3 px-4 bg-gray-50 rounded-lg text-gray-900">{user?.location || 'Not specified'}</p>
+                <p className="py-3 px-4 bg-gray-50 rounded-lg text-gray-900">
+                  {formData.locationScope === 'Philippines'
+                    ? (formData.region ? `${formData.region} - ${formData.specificLocation || 'Not specified'}` : (user?.location || 'Not specified'))
+                    : (user?.location || formData.specificLocation || 'Not specified')}
+                </p>
               )}
             </div>
 

@@ -11,6 +11,8 @@ export interface User {
   currentJob?: string;
   company?: string;
   location?: string;
+  // whether the user's declared location has been verified
+  locationVerified?: boolean;
   phoneNumber?: string;
   isVerified: boolean;
   createdAt: Date;
@@ -46,7 +48,14 @@ export interface ProfileUpdateData {
   course: string;
   currentJob?: string;
   company?: string;
+  // kept for backward compatibility/storage, but UI now uses region + specificLocation
   location?: string;
+  region?: string;
+  specificLocation?: string;
+  // whether the user is in the Philippines or outside (International)
+  locationScope?: 'Philippines' | 'International';
+  // whether the location has been verified (required to save changes)
+  locationVerified?: boolean;
   phoneNumber?: string;
 }
 
@@ -91,6 +100,7 @@ export interface Profile {
   current_job?: string;
   company?: string;
   location?: string;
+  location_verified?: boolean;
   phone_number?: string;
   created_at: string;
   updated_at?: string;
