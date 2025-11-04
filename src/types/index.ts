@@ -38,7 +38,7 @@ export interface RegisterData {
   role: UserRole;
   graduationYear: number;
   course: string;
-  phoneNumber?: string;
+  phoneNumber: string;
 }
 
 export interface ProfileUpdateData {

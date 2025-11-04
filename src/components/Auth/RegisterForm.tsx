@@ -67,6 +67,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
       newErrors.course = 'Course is required';
     }
 
+    // Require phone number, digits-only, and 10-15 length
+    if (!formData.phoneNumber) {
+      newErrors.phoneNumber = 'Phone number is required';
+    } else if (!/^\d+$/.test(formData.phoneNumber)) {
+      newErrors.phoneNumber = 'Phone number must contain digits only';
+    } else if (formData.phoneNumber.length < 10 || formData.phoneNumber.length > 15) {
+      newErrors.phoneNumber = 'Phone number must be 10-15 digits';
+    }
+
     // NEW: terms validation
     if (!termsAccepted) {
       setTermsError('You must accept the Terms and Conditions');
@@ -101,9 +110,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    const processed = name === 'graduationYear'
+      ? parseInt(value)
+      : (name === 'phoneNumber' ? String(value).replace(/[^0-9]/g, '').slice(0, 15) : value);
     setFormData(prev => ({ 
       ...prev, 
-      [name]: name === 'graduationYear' ? parseInt(value) : value 
+      [name]: processed
     }));
     if (errors[name as keyof RegisterData]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
@@ -291,7 +303,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
 
         <div>
           <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
-            Phone Number (Optional)
+            Phone Number *
           </label>
           <div className="relative">
             <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
@@ -301,10 +313,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
               name="phoneNumber"
               value={formData.phoneNumber}
               onChange={handleChange}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              inputMode="numeric"
+              pattern="[0-9]{10,15}"
+              title="Enter 10-15 digits"
+              maxLength={15}
+              className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                errors.phoneNumber ? 'border-red-500' : 'border-gray-300'
+              }`}
               placeholder="Enter phone number"
             />
           </div>
+          {errors.phoneNumber && <p className="mt-1 text-sm text-red-600">{errors.phoneNumber}</p>}
         </div>
 
         {/* NEW: Terms & Conditions checkbox */}
