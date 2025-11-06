@@ -42,7 +42,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        handleAuthUser(session.user);
+        // On initial session (page load with active login), show quick modal first
+        handleAuthUser(session.user, { triggerQuickModal: true });
       } else {
         setAuthState({
           user: null,
@@ -54,9 +55,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         if (session?.user) {
-          handleAuthUser(session.user);
+          // Only trigger quick modal on explicit sign-in events
+          handleAuthUser(session.user, { triggerQuickModal: event === 'SIGNED_IN' });
         } else {
           setAuthState({
             user: null,
@@ -70,7 +72,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleAuthUser = async (supabaseUser: SupabaseUser) => {
+  const handleAuthUser = async (supabaseUser: SupabaseUser, options?: { triggerQuickModal?: boolean }) => {
     try {
       console.log('Handling auth user:', supabaseUser.id);
       const meta = (supabaseUser as any).user_metadata || {};
@@ -158,28 +160,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isAuthenticated: true,
       });
 
-      // Check if the user has already answered the quick profile questions.
-      // If not, ask the UI to show the modal once.
-      try {
-        const { data: existing, error: existingErr } = await supabase
-          .from('user_profile_questions')
-          .select('id')
-          .eq('user_id', supabaseUser.id)
-          .single();
-
-        // If no row found (PostgREST returns PGRST116 for single when not found), show modal
-        if (existingErr && (existingErr as any).code === 'PGRST116') {
-          setShowQuickProfileModal(true);
-        } else if (!existing) {
-          setShowQuickProfileModal(true);
-        } else {
-          // user already has answered questions; ensure modal is not shown
-          setShowQuickProfileModal(false);
-        }
-      } catch (e) {
-        // If the query fails (RLS or network), don't block login — keep modal hidden
-        console.warn('Could not determine quick profile status:', e);
-        setShowQuickProfileModal(false);
+      // Always show the quick profile modal on login/initial session when requested
+      if (options?.triggerQuickModal) {
+        setShowQuickProfileModal(true);
       }
     } catch (error) {
       console.error('Error in handleAuthUser:', error);
@@ -195,7 +178,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const { data: { user: supabaseUser } } = await supabase.auth.getUser();
       if (supabaseUser) {
-        await handleAuthUser(supabaseUser);
+        // Do not trigger the quick modal on background refreshes
+        await handleAuthUser(supabaseUser, { triggerQuickModal: false });
       }
     } catch (error) {
       // Silently handle refresh errors

@@ -185,9 +185,71 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
         </div>
 
         <div className="mt-4 space-y-4">
-          {/* Country / Region / Province */}
-          {/* (same as your previous code) */}
-          {/* ... */}
+          {/* Country / Region / Specific Location */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Select country <span className="text-red-500">*</span>
+            </label>
+            <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-2">
+              <select
+                value={locationScope}
+                onChange={(e) => setLocationScope(e.target.value as LocationScope)}
+                className={`col-span-1 border rounded px-3 py-2 ${!locationScope && touched.scope ? 'border-red-500' : ''}`}
+                onBlur={() => setTouched((t) => ({ ...t, scope: true }))}
+              >
+                <option value="" disabled>
+                  Select country
+                </option>
+                <option value="Philippines">Philippines</option>
+                <option value="International">International</option>
+              </select>
+
+              {locationScope === 'Philippines' && (
+                <div className="col-span-1">
+                  <select
+                    value={region}
+                    onChange={(e) => setRegion(e.target.value)}
+                    className={`w-full border rounded px-3 py-2 ${touched.region && !region ? 'border-red-500' : ''}`}
+                    onBlur={() => setTouched((t) => ({ ...t, region: true }))}
+                  >
+                    <option value="">Select region</option>
+                    <option value="Region I">Region I</option>
+                    <option value="Region 2">Region 2</option>
+                    <option value="Region 3">Region 3</option>
+                    <option value="Region 4A">Region 4A</option>
+                    <option value="Region 4B">Region 4B</option>
+                    <option value="Region 5">Region 5</option>
+                    <option value="Region 6">Region 6</option>
+                    <option value="Region 7">Region 7</option>
+                    <option value="Region 8">Region 8</option>
+                    <option value="Region 9">Region 9</option>
+                    <option value="Region 10">Region 10</option>
+                    <option value="Region 11">Region 11</option>
+                    <option value="Region 12">Region 12</option>
+                    <option value="NCR">NCR</option>
+                    <option value="CAR">CAR</option>
+                    <option value="ARMM">ARMM</option>
+                  </select>
+                  {touched.region && !region && (
+                    <p className="mt-1 text-sm text-red-600">Region is required</p>
+                  )}
+                </div>
+              )}
+
+              <div className="col-span-2 md:col-span-1">
+                <input
+                  value={specificLocation}
+                  onChange={(e) => setSpecificLocation(e.target.value)}
+                  onBlur={() => setTouched((t) => ({ ...t, specificLocation: true }))}
+                  placeholder={locationScope === 'International' ? 'Country / City (e.g. Singapore)' : 'City / Province (e.g. Quezon City)'}
+                  className={`w-full border rounded px-3 py-2 ${touched.specificLocation && !specificLocation ? 'border-red-500' : ''}`}
+                />
+                {touched.specificLocation && !specificLocation && (
+                  <p className="mt-1 text-sm text-red-600">Specific location is required</p>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* Skills */}
           <div>
