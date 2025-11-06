@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Eye, EyeOff, User, Mail, Lock, Phone, Loader2, GraduationCap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { RegisterData } from '../../types';
+import { validateEmail } from '../../lib/validation';
 
 interface RegisterFormProps {
   onSwitchToLogin: () => void;
@@ -23,6 +24,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Partial<RegisterData>>({});
+  const [emailSuggestion, setEmailSuggestion] = useState<string | undefined>(undefined);
   // NEW: terms state
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
@@ -45,11 +47,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
     if (!formData.firstName) newErrors.firstName = 'First name is required';
     if (!formData.lastName) newErrors.lastName = 'Last name is required';
     
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+    // Email validation
+    const emailCheck = validateEmail(formData.email);
+    if (!emailCheck.valid) {
+      newErrors.email = emailCheck.reason || 'Email is invalid';
     }
+    setEmailSuggestion(emailCheck.suggestion);
 
     if (!formData.password) {
       newErrors.password = 'Password is required';
@@ -117,9 +120,21 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
       ...prev, 
       [name]: processed
     }));
-    if (errors[name as keyof RegisterData]) {
+    if (name === 'email') {
+      const check = validateEmail(String(processed));
+      setEmailSuggestion(check.suggestion);
+      setErrors(prev => ({ ...prev, email: check.valid ? '' : (check.reason || 'Email is invalid') }));
+    } else if (errors[name as keyof RegisterData]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+  };
+
+  const applyEmailSuggestion = () => {
+    if (!emailSuggestion) return;
+    setFormData(prev => ({ ...prev, email: emailSuggestion }));
+    const recheck = validateEmail(emailSuggestion);
+    setErrors(prev => ({ ...prev, email: recheck.valid ? '' : (recheck.reason || '') }));
+    setEmailSuggestion(undefined);
   };
 
   return (
@@ -199,6 +214,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
             />
           </div>
           {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+          {emailSuggestion && (
+            <div className="mt-1 text-sm text-gray-600">
+              Did you mean{' '}
+              <button type="button" className="text-blue-600 underline" onClick={applyEmailSuggestion}>
+                {emailSuggestion}
+              </button>
+              ?
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -355,7 +379,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
 
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || !validateEmail(formData.email).valid}
           className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
         >
           {isLoading ? (

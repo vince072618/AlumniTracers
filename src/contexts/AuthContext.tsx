@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import { validateEmail } from '../lib/validation';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { User, AuthState, LoginData, RegisterData } from '../types';
 import { ActivityLogger } from '../lib/activityLogger';
@@ -215,6 +216,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setAuthState(prev => ({ ...prev, isLoading: true }));
 
     try {
+      // Defensive email validation (UI already validates but double-check to avoid bounces)
+      const emailCheck = validateEmail(data.email);
+      if (!emailCheck.valid) {
+        setAuthState(prev => ({ ...prev, isLoading: false }));
+        throw new Error(emailCheck.reason || 'Invalid email');
+      }
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
