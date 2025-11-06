@@ -161,6 +161,8 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
       if (refreshUser) await refreshUser();
 
       onApplied({ locationScope, region, specificLocation });
+      // Mark questionnaire as completed so it won't pop up again on future logins
+      try { if (typeof window !== 'undefined') localStorage.setItem(`gap_completed_${user.id}`, '1'); } catch {}
     } catch (e: any) {
       console.error('Error submitting quick profile answers:', e);
       setError(e?.message || 'Something went wrong.');

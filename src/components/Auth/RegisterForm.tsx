@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, User, Mail, Lock, Phone, Loader2, GraduationCap } from 'lucide-react';
+import { Eye, EyeOff, User, Mail, Lock, Phone, Loader2, GraduationCap, Calendar } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { RegisterData } from '../../types';
 import { validateEmail } from '../../lib/validation';
@@ -312,16 +312,21 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
             <label htmlFor="graduationYear" className="block text-sm font-medium text-gray-700 mb-2">
               Year Graduated *
             </label>
-            <input
-              type="number"
-              id="graduationYear"
-              name="graduationYear"
-              value={formData.graduationYear}
-              onChange={handleChange}
-              min="1980"
-              max="2030"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-            />
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <select
+                id="graduationYear"
+                name="graduationYear"
+                value={formData.graduationYear}
+                onChange={handleChange}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              >
+                <option value="">Select year</option>
+                {Array.from({ length: new Date().getFullYear() - 2005 + 1 }, (_, i) => new Date().getFullYear() - i).map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 

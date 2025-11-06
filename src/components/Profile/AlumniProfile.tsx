@@ -512,15 +512,17 @@ const AlumniProfile: React.FC = () => {
               {isEditing ? (
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                  <input
-                    type="number"
+                  <select
                     name="graduationYear"
                     value={formData.graduationYear}
                     onChange={handleChange}
-                    min="1980"
-                    max="2030"
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  />
+                  >
+                    <option value="">Select year</option>
+                    {Array.from({ length: new Date().getFullYear() - 2005 + 1 }, (_, i) => new Date().getFullYear() - i).map(y => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
                   {(!formData.graduationYear || errors.graduationYear) && (
                     <p className="mt-1 text-sm text-red-600">
                       {errors.graduationYear || "Required field"}

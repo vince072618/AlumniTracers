@@ -43,8 +43,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        // On initial session (page load with active login), show quick modal first
-        handleAuthUser(session.user, { triggerQuickModal: true });
+        // On initial session (page load with active login), do NOT trigger quick modal
+        // We only want the questionnaire to pop up on explicit logins
+        handleAuthUser(session.user, { triggerQuickModal: false });
       } else {
         setAuthState({
           user: null,
@@ -58,8 +59,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (session?.user) {
-          // Only trigger quick modal on explicit sign-in events
-          handleAuthUser(session.user, { triggerQuickModal: event === 'SIGNED_IN' });
+          // Always trigger quick modal on explicit SIGNED_IN events (each login)
+          const shouldTrigger = event === 'SIGNED_IN';
+          handleAuthUser(session.user, { triggerQuickModal: shouldTrigger });
         } else {
           setAuthState({
             user: null,
@@ -161,9 +163,55 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isAuthenticated: true,
       });
 
-      // Always show the quick profile modal on login/initial session when requested
+      // Show the quick profile modal only when explicitly requested (on SIGNED_IN)
+      // AND only if the user hasn't completed the questionnaire yet.
       if (options?.triggerQuickModal) {
-        setShowQuickProfileModal(true);
+        try {
+          const localKey = `gap_completed_${supabaseUser.id}`;
+          const sessionKey = `gap_shown_session_${supabaseUser.id}`;
+
+          // If we've recorded completion locally, don't show
+          try {
+            if (typeof window !== 'undefined' && localStorage.getItem(localKey) === '1') {
+              setShowQuickProfileModal(false);
+              return;
+            }
+          } catch {}
+
+          // Ask DB if questionnaire exists
+          const { data: qpRow, error: qpErr } = await supabase
+            .from('user_profile_questions')
+            .select('id')
+            .eq('user_id', supabaseUser.id)
+            .single();
+
+          if (!qpErr && qpRow?.id) {
+            // Completed – remember locally
+            try { if (typeof window !== 'undefined') localStorage.setItem(localKey, '1'); } catch {}
+            setShowQuickProfileModal(false);
+            return;
+          }
+
+          if (qpErr && (qpErr as any).code !== 'PGRST116') {
+            console.warn('Questionnaire check error:', qpErr);
+            setShowQuickProfileModal(false);
+            return;
+          }
+
+          // Not found -> only show ONCE per tab session
+          try {
+            if (typeof window !== 'undefined' && sessionStorage.getItem(sessionKey) === '1') {
+              setShowQuickProfileModal(false);
+              return;
+            }
+          } catch {}
+
+          setShowQuickProfileModal(true);
+          try { if (typeof window !== 'undefined') sessionStorage.setItem(sessionKey, '1'); } catch {}
+        } catch (e) {
+          console.warn('Questionnaire existence check failed:', e);
+          setShowQuickProfileModal(false);
+        }
       }
     } catch (error) {
       console.error('Error in handleAuthUser:', error);
