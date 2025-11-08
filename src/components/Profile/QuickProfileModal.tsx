@@ -174,10 +174,14 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
   if (!open || typeof document === 'undefined') return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-black opacity-40" />
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-lg w-full max-w-2xl mx-4 p-6">
-        <div className="flex items-start justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4" role="dialog" aria-modal="true">
+      <div className="absolute inset-0 bg-black/40" />
+      <div
+        className="relative z-10 bg-white rounded-lg sm:rounded-xl shadow-xl w-full max-w-md sm:max-w-2xl overflow-hidden flex flex-col"
+        style={{ maxHeight: 'calc(100dvh - 2rem)' }}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between p-6 border-b">
           <h3 className="text-lg font-semibold">Quick Profile Questions</h3>
           {!required && (
             <button onClick={onCancel} aria-label="Cancel" className="text-gray-500 hover:text-gray-700">
@@ -186,7 +190,8 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
           )}
         </div>
 
-        <div className="mt-4 space-y-4">
+        {/* Scrollable content */}
+  <div className="flex-1 min-h-0 px-6 pt-4 pb-2 space-y-4 overflow-y-auto overscroll-contain">
           {/* Country / Region / Specific Location */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -387,8 +392,8 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
           )}
         </div>
 
-        {/* Footer buttons */}
-        <div className="mt-6 flex justify-end space-x-3">
+        {/* Footer buttons - pinned at bottom */}
+        <div className="p-6 border-t flex justify-end space-x-3">
           {!required && (
             <button onClick={onCancel} className="px-4 py-2 bg-gray-200 rounded">
               Cancel
@@ -403,7 +408,7 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
             {submitting ? 'Submitting...' : 'Apply'}
           </button>
         </div>
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+        {error && <p className="px-6 pb-4 text-sm text-red-600">{error}</p>}
       </div>
     </div>,
     document.body
