@@ -429,16 +429,19 @@ const AlumniProfile: React.FC = () => {
                 {user?.firstName} {user?.lastName}
               </h3>
               <p className="text-gray-600">{user?.course} • Year Graduated {user?.graduationYear}</p>
-              <div className="flex items-center mt-2 gap-2">
+              <div className="flex items-center mt-2 gap-2 flex-wrap">
                 <Mail size={14} className="text-gray-400 mr-2" />
-                <span className="text-sm text-gray-600">{user?.email}</span>
+                {/* Truncate email on very small screens to avoid overflow */}
+                <span className="text-sm text-gray-600 max-w-[160px] sm:max-w-none truncate">{user?.email}</span>
                 {user?.isVerified ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">
-                    <ShieldCheck size={12} /> Verified
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium flex-shrink-0 whitespace-nowrap" title="Verified">
+                    <ShieldCheck size={12} />
+                    <span className="ml-0.5">Verified</span>
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium" title="Not yet verified by admin">
-                    <ShieldAlert size={12} /> Pending Verification
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium flex-shrink-0 whitespace-nowrap" title="Not yet verified by admin">
+                    <ShieldAlert size={12} />
+                    <span className="ml-0.5">Pending</span>
                   </span>
                 )}
               </div>
