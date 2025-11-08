@@ -97,10 +97,10 @@ const AlumniProfile: React.FC = () => {
 
   const courses = [
      'BSIT',
-    'TEP BSEd - English',
-    'TEP BSEd - Math',
-    'TEP - BEEd',
-    'TEP - BECEd',
+    'BSEd - English',
+    'BSEd - Math',
+    'BEEd',
+    'BECEd',
     'BSBA - Financial Management',
     'BSBA - Marketing Management',
     'BSBA - Operations Management',
