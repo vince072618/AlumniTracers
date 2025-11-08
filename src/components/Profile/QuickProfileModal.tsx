@@ -43,6 +43,47 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
   const [awardDetails, setAwardDetails] = React.useState<string>('');
   const [employmentType, setEmploymentType] = React.useState<'Private' | 'Government' | ''>('');
   const [contractType, setContractType] = React.useState<string>('');
+  // Skills suggestions feature state / config
+  const COMMON_SKILLS: string[] = React.useMemo(
+    () => [
+      // Core / existing list
+      'Project management','Data analysis','Teaching','Curriculum design','UI design','UX design',
+      'Graphic design','Web development','Mobile development','Cloud computing','Database management',
+      'Cybersecurity','Network administration','Machine learning','Deep learning','Statistics','Public speaking',
+      'Technical writing','Research','Problem solving','Leadership','Team collaboration','Time management',
+      'Critical thinking','Adaptability','Creativity','Marketing','Digital marketing','SEO','Content creation',
+      'Video editing','Photography','Accounting','Bookkeeping','Financial analysis','Sales','Customer service',
+      'Business analysis','Product management','Quality assurance','Testing','Automation','DevOps','Version control',
+      'Git','Agile','Scrum','Data visualization','Excel','Power BI','Tableau','Negotiation','Mentoring','Coaching',
+      'Foreign language','HTML','CSS','JavaScript','TypeScript','React','Node.js','Python','Java','C#','PHP','Go','Rust',
+      // Expanded Tech / BSIT / ITE
+      'Systems analysis','Requirements gathering','Software architecture','API design','RESTful APIs','GraphQL',
+      'Microservices','Containerization','Docker','Kubernetes','CI/CD','Unit testing','Integration testing','E2E testing',
+      'Load testing','Security testing','Penetration testing','Performance optimization','Code refactoring','Design patterns',
+      'Object-oriented programming','Functional programming','Data structures','Algorithms','Distributed systems','Concurrency',
+      'Multithreading','Event-driven architecture','Networking fundamentals','Operating systems','Shell scripting',
+      'Linux administration','Windows server administration','Virtualization','Edge computing','Infrastructure as code',
+      'Terraform','Ansible','Cloud architecture','AWS','Azure','Google Cloud','Serverless','Lambda','Firebase','Supabase',
+      'PostgreSQL','MySQL','MongoDB','Redis','Elasticsearch','Caching strategies','Message queues','RabbitMQ','Kafka',
+      'Graph databases','Neo4j','Blockchain basics','Mobile UI','Responsive design','Accessibility','Internationalization',
+      'Localization','Cross-browser testing','Progressive web apps','Performance profiling','Code review','Secure coding',
+      'OWASP Top 10','Encryption','Authentication','Authorization','SSO','OAuth','JWT','WebSockets','Real-time communication',
+      'Debugging','Logging','Monitoring','Observability','Prometheus','Grafana','Sentry',
+      // BA (Business Analysis)
+      'Stakeholder analysis','Process mapping','Workflow optimization','Requirements documentation','Use case modeling',
+      'User stories','Business process modeling','Gap analysis','Feasibility analysis','Cost-benefit analysis',
+      'Risk assessment','Change management','Data modeling','SWOT analysis','KPI development','Root cause analysis',
+      'Value stream mapping','Competitive analysis','Business intelligence','Dashboard design',
+      // TEP / Educational Technology / Pedagogy
+      'Educational technology','Instructional design','Lesson planning','Learning assessment',
+      'Classroom management','Outcome-based education','Student engagement','E-learning development',
+      'LMS administration','Curriculum alignment','Formative assessment','Summative assessment','Differentiated instruction',
+      'Academic advising','Educational research','Rubric design','Online facilitation','Blended learning','Teaching strategies',
+      'Inclusive education','Learning analytics','Peer mentoring','Distance education','Teaching with technology'
+    ],
+    []
+  );
+  const [highlightIndex, setHighlightIndex] = React.useState<number>(0);
 
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -91,6 +132,62 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
 
     return hasScope && hasRegion && hasSpecific && hasSkills && hasEmployment && ifEmployedValid;
   }, [locationScope, region, specificLocation, skills, employmentStatus, jobRelatedCourse, receivedAward, employmentType, contractType]);
+
+  // Derive suggestions based on the last partial token user is typing
+  const suggestions = React.useMemo(() => {
+    const raw = skills;
+    const tokens = raw
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+    const lastComma = raw.lastIndexOf(',');
+    const partial = (lastComma === -1 ? raw : raw.slice(lastComma + 1)).trim().toLowerCase();
+    if (!partial || partial.length < 1) return [];
+    const lowerTokens = new Set(tokens.map((t) => t.toLowerCase()));
+    const filtered = COMMON_SKILLS.filter(
+      (skill) => skill.toLowerCase().startsWith(partial) && !lowerTokens.has(skill.toLowerCase())
+    );
+    return filtered.slice(0, 8);
+  }, [skills, COMMON_SKILLS]);
+
+  const addSkill = (skill: string) => {
+    setSkills((prev) => {
+      const lastComma = prev.lastIndexOf(',');
+      const partial = (lastComma === -1 ? prev : prev.slice(lastComma + 1)).trim();
+      const tokens = prev
+        .split(',')
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0);
+      if (tokens.map((t) => t.toLowerCase()).includes(skill.toLowerCase())) return prev; // already exists
+      // Replace the partial if it is a prefix of the chosen skill; else append.
+      if (partial && skill.toLowerCase().startsWith(partial.toLowerCase())) {
+        const otherTokens = tokens.slice(0, -1);
+        return [...otherTokens, skill].join(', ') + ', ';
+      }
+      if (prev.trim().length === 0) return skill + ', ';
+      return prev.trim().endsWith(',') ? prev + ' ' + skill + ', ' : prev + ', ' + skill + ', ';
+    });
+    setTouched((t) => ({ ...t, skills: true }));
+    setHighlightIndex(0);
+  };
+
+  const onSkillsKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
+    if (suggestions.length === 0) return;
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      addSkill(suggestions[highlightIndex] || suggestions[0]);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightIndex((i) => (i + 1) % suggestions.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightIndex((i) => (i - 1 + suggestions.length) % suggestions.length);
+    } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      // Allow accepting with Ctrl+Enter / Cmd+Enter so Enter alone still lets multi-line editing if needed
+      e.preventDefault();
+      addSkill(suggestions[highlightIndex] || suggestions[0]);
+    }
+  };
 
   const submit = async () => {
     setError(null);
@@ -258,19 +355,48 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
             </div>
           </div>
 
-          {/* Skills */}
+          {/* Skills with suggestions */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               What skills did you gain from the course you completed? <span className="text-red-500">*</span>
             </label>
             <textarea
               value={skills}
-              onChange={(e) => setSkills(e.target.value)}
+              onChange={(e) => {
+                setSkills(e.target.value);
+                setHighlightIndex(0);
+              }}
               onBlur={() => setTouched((t) => ({ ...t, skills: true }))}
+              onKeyDown={onSkillsKeyDown}
               rows={3}
-              className={`w-full mt-2 border rounded px-3 py-2 ${touched.skills && !skills ? 'border-red-500' : ''}`}
+              aria-autocomplete="list"
+              aria-expanded={suggestions.length > 0}
+              aria-controls="skill-suggestion-list"
+              className={`w-full mt-2 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${touched.skills && !skills ? 'border-red-500' : ''}`}
               placeholder="e.g. data analysis, teaching strategies, UI design"
             />
+            {suggestions.length > 0 && (
+              <div id="skill-suggestion-list" className="mt-2 flex flex-wrap gap-2" aria-label="Skill suggestions">
+                {suggestions.map((s, i) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onMouseDown={(e) => {
+                      // onMouseDown to avoid textarea blur before click registers
+                      e.preventDefault();
+                      addSkill(s);
+                    }}
+                    className={`text-xs px-2 py-1 rounded border transition shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 cursor-pointer ${
+                      i === highlightIndex ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-100 hover:bg-blue-100 border-gray-300'
+                    }`}
+                    aria-selected={i === highlightIndex}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+            <p className="mt-1 text-xs text-gray-500">Type a skill and press Tab to accept a highlighted suggestion, or Ctrl/Cmd+Enter to insert. Suggestions avoid duplicates automatically.</p>
           </div>
 
           {/* Employment Status */}
