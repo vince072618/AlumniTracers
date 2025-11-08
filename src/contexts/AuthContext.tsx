@@ -151,7 +151,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         company: finalProfile?.company || '',
         location: finalProfile?.location || '',
         phoneNumber: finalProfile?.phone_number || '',
-        isVerified: supabaseUser.email_confirmed_at !== null,
+        // Prefer admin-managed alumni verification; fallback to email confirmation if field not present yet
+        isVerified: (typeof finalProfile?.is_verified === 'boolean'
+          ? Boolean(finalProfile?.is_verified)
+          : (supabaseUser.email_confirmed_at !== null)),
         createdAt: new Date(supabaseUser.created_at),
       };
 

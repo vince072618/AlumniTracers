@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogOut, Bell, Menu } from 'lucide-react';
+import { LogOut, Bell, Menu, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface HeaderProps {
@@ -57,8 +57,17 @@ const Header: React.FC<HeaderProps> = ({ onMobileMenuToggle }) => {
             <p className="text-sm font-medium text-gray-900">
               {user?.firstName} {user?.lastName}
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="flex items-center gap-2 text-xs text-gray-500">
               Alumni • {user?.email}
+              {user?.isVerified ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
+                  <ShieldCheck size={12} /> Verified
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium" title="Not yet verified by admin">
+                  <ShieldAlert size={12} /> Pending
+                </span>
+              )}
             </p>
           </div>
 

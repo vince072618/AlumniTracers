@@ -101,6 +101,10 @@ export interface Profile {
   company?: string;
   location?: string;
   location_verified?: boolean;
+  // alumni verification status managed by admin
+  is_verified?: boolean;
+  verified_at?: string | null;
+  verified_by?: string | null;
   phone_number?: string;
   created_at: string;
   updated_at?: string;

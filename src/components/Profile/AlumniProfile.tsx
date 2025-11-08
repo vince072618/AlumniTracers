@@ -1,16 +1,26 @@
 import React, { useState } from 'react';
-import { CreditCard as Edit3, Save, X, User, GraduationCap, Briefcase, Building, MapPin, Phone, Mail, Calendar, Loader2 } from 'lucide-react';
+import { CreditCard as Edit3, Save, X, User, GraduationCap, Briefcase, Building, MapPin, Phone, Mail, Calendar, Loader2, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ProfileUpdateData } from '../../types';
 import { supabase } from '../../lib/supabase';
 import { ActivityLogger } from '../../lib/activityLogger';
 import QuickProfileModal, { LocationScope } from './QuickProfileModal';
+import AdminVerifyToggle from './AdminVerifyToggle';
 
 const AlumniProfile: React.FC = () => {
   const { user, refreshUser } = useAuth();
   const { showQuickProfileModal, setShowQuickProfileModal } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  React.useEffect(() => {
+    // Determine if current user is an admin via user_metadata.role
+    supabase.auth.getUser().then(({ data }) => {
+      const role = data.user?.user_metadata?.role;
+      setIsAdmin(role === 'admin');
+    }).catch(() => setIsAdmin(false));
+  }, []);
   // parse existing location into locationScope + region + specificLocation when possible
   const parseLocation = (loc?: string) => {
     const knownRegions = [
@@ -378,6 +388,16 @@ const AlumniProfile: React.FC = () => {
                 )}
                 Save Changes
               </button>
+              {/* Admin verify control */}
+              {isAdmin && user?.id && (
+                <div className="mt-2">
+                  <AdminVerifyToggle
+                    userId={user.id}
+                    isVerified={!!user.isVerified}
+                    onChange={async () => { await refreshUser?.(); }}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -409,9 +429,18 @@ const AlumniProfile: React.FC = () => {
                 {user?.firstName} {user?.lastName}
               </h3>
               <p className="text-gray-600">{user?.course} • Year Graduated {user?.graduationYear}</p>
-              <div className="flex items-center mt-2">
+              <div className="flex items-center mt-2 gap-2">
                 <Mail size={14} className="text-gray-400 mr-2" />
                 <span className="text-sm text-gray-600">{user?.email}</span>
+                {user?.isVerified ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">
+                    <ShieldCheck size={12} /> Verified
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium" title="Not yet verified by admin">
+                    <ShieldAlert size={12} /> Pending Verification
+                  </span>
+                )}
               </div>
             </div>
           </div>
