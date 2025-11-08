@@ -322,7 +322,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
               >
                 <option value="">Select year</option>
-                {Array.from({ length: new Date().getFullYear() - 2005 + 1 }, (_, i) => new Date().getFullYear() - i).map(y => (
+                {Array.from({ length: Math.max(new Date().getFullYear(), 2026) - 2005 + 1 }, (_, i) => Math.max(new Date().getFullYear(), 2026) - i).map(y => (
                   <option key={y} value={y}>{y}</option>
                 ))}
               </select>
