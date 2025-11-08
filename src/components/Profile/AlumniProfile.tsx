@@ -121,7 +121,7 @@ const AlumniProfile: React.FC = () => {
   if (!formData.specificLocation) newErrors.specificLocation = 'Please specify your city/province or country';
   if (!formData.phoneNumber) newErrors.phoneNumber = 'Phone number is required';
   else if (!/^\d+$/.test(formData.phoneNumber)) newErrors.phoneNumber = 'Phone number must contain digits only';
-  else if (String(formData.phoneNumber).length < 10 || String(formData.phoneNumber).length > 15) newErrors.phoneNumber = 'Phone number must be 10-15 digits';
+  else if (String(formData.phoneNumber).length !== 11) newErrors.phoneNumber = 'Phone number must be 11 digits';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -319,7 +319,7 @@ const AlumniProfile: React.FC = () => {
     const { name, value } = e.target;
     const processed = name === 'graduationYear'
       ? parseInt(value)
-      : (name === 'phoneNumber' ? String(value).replace(/[^0-9]/g, '').slice(0, 15) : value);
+      : (name === 'phoneNumber' ? String(value).replace(/[^0-9]/g, '').slice(0, 11) : value);
     setFormData(prev => ({ 
       ...prev, 
       [name]: processed
@@ -681,9 +681,9 @@ const AlumniProfile: React.FC = () => {
                     value={formData.phoneNumber}
                     onChange={handleChange}
                     inputMode="numeric"
-                    pattern="[0-9]{10,15}"
-                    title="Enter 10-15 digits"
-                    maxLength={15}
+                    pattern="[0-9]{11}"
+                    title="Enter 11 digits"
+                    maxLength={11}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     placeholder="Enter your phone number"
                   />
