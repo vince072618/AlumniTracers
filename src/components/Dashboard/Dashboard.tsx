@@ -3,6 +3,7 @@ import Header from '../Layout/Header';
 import Sidebar from '../Layout/Sidebar';
 import AlumniProfile from '../Profile/AlumniProfile';
 import PasswordChangeForm from '../Profile/PasswordChangeForm';
+import Announcements from '../Announcements/Announcements';
 
 const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -39,6 +40,8 @@ const Dashboard: React.FC = () => {
             <PasswordChangeForm onSuccess={() => setActiveTab('profile')} />
           </div>
         );
+      case 'announcements':
+        return <div className="space-y-6"><Announcements /></div>;
       default:
         return <AlumniProfile />;
     }

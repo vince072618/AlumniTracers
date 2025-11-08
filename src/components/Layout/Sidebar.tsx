@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, GraduationCap, Lock, X } from 'lucide-react';
+import { User, GraduationCap, Lock, X, Megaphone } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
@@ -16,6 +16,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const menuItems = [
     { id: 'profile', label: 'My Profile', icon: User },
+    { id: 'announcements', label: 'Announcements', icon: Megaphone },
     { id: 'password', label: 'Change Password', icon: Lock },
   ];
 
