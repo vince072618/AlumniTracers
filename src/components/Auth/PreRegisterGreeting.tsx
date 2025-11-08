@@ -20,7 +20,7 @@ const PreRegisterGreeting: React.FC<PreRegisterGreetingProps> = ({ onNext, onCan
       <div className="space-y-4 text-gray-700">
         <p>Dear Alumni,</p>
         <p>
-          Greetings from your Alma Mater! We value our graduates you are a clear proof of our success. We aim to
+          Greetings from your Alma Mater! We value our graduates—you are a clear proof of our success. We aim to
           stay connected with you to build a stronger alumni network and open opportunities for collaboration.
         </p>
         <p>
