@@ -8,16 +8,16 @@ interface PreRegisterGreetingProps {
 
 const PreRegisterGreeting: React.FC<PreRegisterGreetingProps> = ({ onNext, onCancel }) => {
   return (
-    <div className="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8">
+    <div className="w-full max-w-md sm:max-w-xl md:max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-6 sm:p-8">
       <div className="text-center mb-6">
         <div className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center mx-auto mb-4 bg-white">
           <img src="/logo.jpeg" alt="School Logo" className="w-full h-full object-contain" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">NBSC Alumni Portal</h2>
-        <p className="text-gray-600">Alumni Tracer - Welcome</p>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">NBSC Alumni Portal</h2>
+        <p className="text-sm text-gray-600 mb-2">Alumni Tracer - Welcome</p>
       </div>
 
-      <div className="space-y-4 text-gray-700">
+      <div className="space-y-4 text-gray-700 max-h-[60vh] overflow-auto pr-2">
         <p>Dear Alumni,</p>
         <p>
           Greetings from your Alma Mater! We value our graduates—you are a clear proof of our success. We aim to
@@ -31,7 +31,7 @@ const PreRegisterGreeting: React.FC<PreRegisterGreetingProps> = ({ onNext, onCan
         <p className="text-sm text-gray-500"></p>
       </div>
 
-      <div className="mt-8 flex items-center justify-between">
+      <div className="mt-6 sm:mt-8 flex items-center justify-between">
         <button
           type="button"
           onClick={onCancel}

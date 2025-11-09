@@ -138,18 +138,18 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   };
 
   return (
-<div className="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8">
-  <div className="text-center mb-8">
-    <div className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center mx-auto mb-4 bg-white">
-      <img
-        src="/logo.jpeg"
-        alt="School Logo"
-        className="w-full h-full object-contain"
-      />
+  <div className="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8">
+    <div className="text-center mb-8">
+      <div className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center mx-auto mb-4 bg-white">
+        <img
+          src="/logo.jpeg"
+          alt="School Logo"
+          className="w-full h-full object-contain"
+        />
+      </div>
+      <h2 className="text-2xl font-bold text-gray-900 mb-2">Join NBSC Alumni</h2>
+      <p className="text-gray-600">Create your alumni profile and stay connected</p>
     </div>
-    <h2 className="text-2xl font-bold text-gray-900 mb-2">Join NBSC Alumni</h2>
-    <p className="text-gray-600">Create your alumni profile and stay connected</p>
-  </div>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
