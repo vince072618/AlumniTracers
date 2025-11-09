@@ -8,8 +8,10 @@ import {
   Typography,
   Stack,
   LinearProgress,
-  Alert
+  Alert,
+  Button
 } from '@mui/material'
+import { Eye } from 'lucide-react'
 
 type Ann = {
   id: string
@@ -19,6 +21,7 @@ type Ann = {
   published_at: string | null
   created_at: string
   image_url?: string | null
+  post_url?: string | null
 }
 
 function fmtDate(d?: string | null) {
@@ -40,7 +43,7 @@ export default function Announcements() {
     try {
       const { data, error } = await supabase
         .from('announcements')
-        .select('id,title,body,audience,published_at,created_at,image_url')
+        .select('id,title,body,audience,published_at,created_at,image_url,post_url')
         .eq('published', true)
         .order('published_at', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false })
@@ -147,6 +150,21 @@ export default function Announcements() {
                   >
                     {a.body}
                   </Typography>
+                  {a.post_url && (
+                    <Box sx={{ mt: 1 }}>
+                      <Button
+                        component="a"
+                        href={a.post_url}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        variant="outlined"
+                        size="small"
+                        startIcon={<Eye size={18} />}
+                      >
+                        View Post
+                      </Button>
+                    </Box>
+                  )}
                 </Stack>
               </CardContent>
             </Box>
