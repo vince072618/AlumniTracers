@@ -405,15 +405,29 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
             <h3 className="text-lg font-semibold mb-3">Terms and Conditions</h3>
             <div className="max-h-72 overflow-y-auto space-y-3 text-sm text-gray-700">
               <p>
-                By creating an account, you agree to our policies on data collection and usage for
-                alumni engagement, communication, and analytics. You confirm the information you
-                provide is accurate and that you have read and agree to our Privacy Policy.
+                By creating an account, you agree to the collection and use of your personal information for alumni engagement,
+                communication, and analytics. You confirm that all information you provide is true and accurate, and that you have
+                read and accepted our Privacy Policy.
               </p>
               <p>
-                You may request deletion of your account and associated data by contacting support.
-                Continued use constitutes acceptance of any future updates to these terms.
+                In compliance with the{' '}
+                <a
+                  href="https://privacy.gov.ph/data-privacy-act/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline hover:text-blue-700"
+                >
+                  Data Privacy Act of 2012 (R.A. 10173)
+                </a>
+                , we assure you that all collected information will be treated with the highest level of confidentiality. Your data will
+                be used exclusively for academic and institutional purposes related to the NBSC Alumni Profiling and Tracer System. All
+                information will remain securely stored within the system database and accessible only to authorized school personnel for
+                official use.
               </p>
-              {/* Replace with your real terms content or fetch from a dedicated page */}
+              <p>
+                You may request the deletion of your account and associated data by contacting our support team. Continued use of the
+                system constitutes your acceptance of any future updates to these terms.
+              </p>
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <button
