@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { CreditCard as Edit3, Save, X, User, GraduationCap, Briefcase, Building, MapPin, Phone, Mail, Calendar, Loader2, ShieldCheck, ShieldAlert } from 'lucide-react';
+import YearSelect from '../Shared/YearSelect';
+import CustomSelect from '../Shared/CustomSelect';
 import { useAuth } from '../../contexts/AuthContext';
 import { ProfileUpdateData } from '../../types';
 import { supabase } from '../../lib/supabase';
@@ -506,26 +508,19 @@ const AlumniProfile: React.FC = () => {
               )}
             </div>
 
-            <div>
+            <div className="min-w-0">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Course/Program <span className="text-red-500">*</span>
               </label>
               {isEditing ? (
                 <div className="relative">
                   <GraduationCap className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                  <select
-                    name="course"
+                  <CustomSelect
+                    options={courses}
                     value={formData.course}
-                    onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                      errors.course || !formData.course ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  >
-                    <option value="">Select your course</option>
-                    {courses.map(course => (
-                      <option key={course} value={course}>{course}</option>
-                    ))}
-                  </select>
+                    onChange={(v: string) => setFormData(prev => ({ ...prev, course: v }))}
+                    placeholder="Select your course"
+                  />
                   {(!formData.course || errors.course) && (
                     <p className="mt-1 text-sm text-red-600">
                       {errors.course || "Required field"}
@@ -537,24 +532,21 @@ const AlumniProfile: React.FC = () => {
               )}
             </div>
 
-            <div>
+            <div className="min-w-0">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Year Graduated <span className="text-red-500">*</span>
               </label>
               {isEditing ? (
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                  <select
-                    name="graduationYear"
-                    value={formData.graduationYear}
-                    onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  >
-                    <option value="">Select year</option>
-                    {Array.from({ length: Math.max(new Date().getFullYear(), 2026) - 2005 + 1 }, (_, i) => Math.max(new Date().getFullYear(), 2026) - i).map(y => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </select>
+                <div>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                    <YearSelect
+                      value={formData.graduationYear}
+                      onChange={(y) => setFormData(prev => ({ ...prev, graduationYear: y }))}
+                      placeholder="Select year"
+                      className=""
+                    />
+                  </div>
                   {(!formData.graduationYear || errors.graduationYear) && (
                     <p className="mt-1 text-sm text-red-600">
                       {errors.graduationYear || "Required field"}

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, User, Mail, Lock, Phone, Loader2, GraduationCap, Calendar } from 'lucide-react';
+import YearSelect from '../Shared/YearSelect';
+import CustomSelect from '../Shared/CustomSelect';
 import { useAuth } from '../../contexts/AuthContext';
 import { RegisterData } from '../../types';
 import { validateEmail } from '../../lib/validation';
@@ -151,7 +153,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
       <p className="text-gray-600">Create your alumni profile and stay connected</p>
     </div>
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
               First Name *
@@ -284,48 +286,33 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
+          <div className="min-w-0">
             <label htmlFor="course" className="block text-sm font-medium text-gray-700 mb-2">
               Course/Program *
             </label>
             <div className="relative">
               <GraduationCap className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-              <select
-                id="course"
-                name="course"
+              <CustomSelect
+                options={courses}
                 value={formData.course}
-                onChange={handleChange}
-                className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                  errors.course ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                <option value="">Select your course</option>
-                {courses.map(course => (
-                  <option key={course} value={course}>{course}</option>
-                ))}
-              </select>
+                onChange={(v: string) => setFormData(prev => ({ ...prev, course: v }))}
+                placeholder="Select your course"
+              />
             </div>
             {errors.course && <p className="mt-1 text-sm text-red-600">{errors.course}</p>}
           </div>
 
-          <div>
+          <div className="min-w-0">
             <label htmlFor="graduationYear" className="block text-sm font-medium text-gray-700 mb-2">
               Year Graduated *
             </label>
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <select
-                id="graduationYear"
-                name="graduationYear"
+              <YearSelect
                 value={formData.graduationYear}
-                onChange={handleChange}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-              >
-                <option value="">Select year</option>
-                {Array.from({ length: Math.max(new Date().getFullYear(), 2026) - 2005 + 1 }, (_, i) => Math.max(new Date().getFullYear(), 2026) - i).map(y => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
+                  onChange={(y: number) => setFormData(prev => ({ ...prev, graduationYear: y }))}
+                placeholder="Select year"
+              />
             </div>
           </div>
         </div>
