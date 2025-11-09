@@ -35,7 +35,7 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
   const [region, setRegion] = React.useState<string>(initial.region || '');
   const [specificLocation, setSpecificLocation] = React.useState<string>(initial.specificLocation || '');
   const [skills, setSkills] = React.useState<string>('');
-  const [employmentStatus, setEmploymentStatus] = React.useState<'employed' | 'unemployed' | ''>('');
+  const [employmentStatus, setEmploymentStatus] = React.useState<'employed' | 'unemployed' | 'self-employed' | ''>('');
 
   // New fields
   const [jobRelatedCourse, setJobRelatedCourse] = React.useState<boolean | null>(null);
@@ -119,16 +119,19 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
     const hasRegion = hasScope && locationScope === 'Philippines' ? region.trim().length > 0 : true;
     const hasSpecific = specificLocation.trim().length > 0;
     const hasSkills = skills.trim().length > 0;
-    const hasEmployment = employmentStatus === 'employed' || employmentStatus === 'unemployed';
+  const hasEmployment = employmentStatus === 'employed' || employmentStatus === 'unemployed' || employmentStatus === 'self-employed';
 
     const ifEmployedValid =
       employmentStatus === 'unemployed' ||
-      (jobRelatedCourse !== null &&
-        receivedAward !== null &&
-        employmentType !== '' &&
-        (employmentType === 'Private'
-          ? ['Regular', 'Contractual'].includes(contractType)
-          : ['Regular', 'Job Order', 'Contractual', 'Casual'].includes(contractType)));
+      (jobRelatedCourse !== null && receivedAward !== null &&
+        // For regular employed workers require employmentType and contractType where applicable.
+        (employmentStatus === 'employed'
+          ? (employmentType !== '' && (employmentType === 'Private'
+              ? ['Regular', 'Contractual'].includes(contractType)
+              : ['Regular', 'Job Order', 'Contractual', 'Casual'].includes(contractType)))
+          : true // self-employed: don't require employmentType/contractType
+        )
+      );
 
     return hasScope && hasRegion && hasSpecific && hasSkills && hasEmployment && ifEmployedValid;
   }, [locationScope, region, specificLocation, skills, employmentStatus, jobRelatedCourse, receivedAward, employmentType, contractType]);
@@ -203,18 +206,20 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
       setSubmitting(true);
       if (!user?.id) throw new Error('Not authenticated');
 
-      const payload: Record<string, any> = {
+        const payload: Record<string, any> = {
         user_id: user.id,
         country: locationScope === 'International' ? specificLocation : 'Philippines',
         region: locationScope === 'Philippines' ? region : locationScope === 'International' ? 'International' : null,
         province: locationScope === 'Philippines' ? specificLocation : null,
         skills,
-        employment_status: employmentStatus === 'employed' ? 'Employed' : 'Unemployed',
+    // Store the actual selected status. Ensure the DB migration to allow 'Self-employed' is applied before submitting.
+    employment_status: employmentStatus === 'employed' ? 'Employed' : (employmentStatus === 'self-employed' ? 'Self-employed' : 'Unemployed'),
         job_related_course: jobRelatedCourse,
         received_award: receivedAward,
         award_details: receivedAward ? awardDetails || null : null,
-        employment_type: employmentType || null,
-        contract_type: contractType || null,
+  // For self-employed leave employment_type null; only employed users have employment_type set
+  employment_type: employmentStatus === 'self-employed' ? null : (employmentType || null),
+        contract_type: employmentStatus === 'self-employed' ? null : (contractType || null),
         created_at: new Date().toISOString(),
       };
 
@@ -410,6 +415,10 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
                 <span className="ml-2">Employed</span>
               </label>
               <label className="inline-flex items-center">
+                <input type="radio" name="employment" value="self-employed" checked={employmentStatus === 'self-employed'} onChange={() => setEmploymentStatus('self-employed')} />
+                <span className="ml-2">Self-employed</span>
+              </label>
+              <label className="inline-flex items-center">
                 <input type="radio" name="employment" value="unemployed" checked={employmentStatus === 'unemployed'} onChange={() => setEmploymentStatus('unemployed')} />
                 <span className="ml-2">Unemployed</span>
               </label>
@@ -417,7 +426,7 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
           </div>
 
           {/* Conditional questions for employed users */}
-          {employmentStatus === 'employed' && (
+          {(employmentStatus === 'employed' || employmentStatus === 'self-employed') && (
             <>
               {/* Job Related */}
               <div>
@@ -462,21 +471,23 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
                 )}
               </div>
 
-              {/* Employment Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Are you a private or government employee? <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={employmentType}
-                  onChange={(e) => setEmploymentType(e.target.value as 'Private' | 'Government')}
-                  className="mt-2 w-full border rounded px-3 py-2"
-                >
-                  <option value="">Select</option>
-                  <option value="Private">Private</option>
-                  <option value="Government">Government</option>
-                </select>
-              </div>
+              {/* Employment Type (only for employed, not for self-employed) */}
+              {employmentStatus === 'employed' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Are you a private or government employee? <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={employmentType}
+                    onChange={(e) => setEmploymentType(e.target.value as 'Private' | 'Government')}
+                    className="mt-2 w-full border rounded px-3 py-2"
+                  >
+                    <option value="">Select</option>
+                    <option value="Private">Private</option>
+                    <option value="Government">Government</option>
+                  </select>
+                </div>
+              )}
 
               {/* Contract Type */}
               {employmentType === 'Private' && (
