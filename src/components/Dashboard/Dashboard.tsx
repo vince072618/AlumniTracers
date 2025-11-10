@@ -4,6 +4,8 @@ import Sidebar from '../Layout/Sidebar';
 import AlumniProfile from '../Profile/AlumniProfile';
 import PasswordChangeForm from '../Profile/PasswordChangeForm';
 import Announcements from '../Announcements/Announcements';
+import DeletionRequests from '../Admin/DeletionRequests';
+import DeleteAccountRequest from '../Profile/DeleteAccountRequest.tsx';
 
 const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -42,6 +44,10 @@ const Dashboard: React.FC = () => {
         );
       case 'announcements':
         return <div className="space-y-6"><Announcements /></div>;
+      case 'request-delete':
+        return <div className="space-y-6"><DeleteAccountRequest /></div>;
+      case 'deletion-requests':
+        return <div className="space-y-6"><DeletionRequests /></div>;
       default:
         return <AlumniProfile />;
     }

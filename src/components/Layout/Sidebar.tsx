@@ -1,5 +1,6 @@
 import React from 'react';
-import { User, GraduationCap, Lock, X, Megaphone } from 'lucide-react';
+import { User, GraduationCap, Lock, X, Megaphone, Trash2 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 interface SidebarProps {
   activeTab: string;
@@ -14,10 +15,24 @@ const Sidebar: React.FC<SidebarProps> = ({
   isMobileMenuOpen = false, 
   onMobileMenuClose 
 }) => {
+  const [isAdmin, setIsAdmin] = React.useState(false);
+
+  React.useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const role = data.user?.user_metadata?.role;
+      setIsAdmin(role === 'admin');
+    }).catch(() => setIsAdmin(false));
+  }, []);
+
   const menuItems = [
     { id: 'profile', label: 'My Profile', icon: User },
     { id: 'announcements', label: 'Announcements', icon: Megaphone },
     { id: 'password', label: 'Change Password', icon: Lock },
+    { id: 'request-delete', label: 'Request Account Deletion', icon: Trash2 },
+    // Admin-only items
+    ...(isAdmin ? ([
+      { id: 'deletion-requests', label: 'Deletion Requests', icon: Trash2 },
+    ] as const) : []),
   ];
 
   const handleTabChange = (tabId: string) => {

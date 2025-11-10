@@ -417,7 +417,7 @@ const AlumniProfile: React.FC = () => {
         onCancel={handleQuickModalCancel}
       />
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+  <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="p-6">
           {/* Profile Header */}
           <div className="flex items-center space-x-6 mb-8 pb-6 border-b border-gray-200">
@@ -725,6 +725,8 @@ const AlumniProfile: React.FC = () => {
 
         </div>
       </div>
+
+  {/* Account Deletion Request Section moved to sidebar tab 'Request Account Deletion' */}
     </div>
   );
 };

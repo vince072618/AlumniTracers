@@ -139,6 +139,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .eq('id', supabaseUser.id)
         .single();
 
+      // If account deletion request is approved, immediately block access and sign out
+      try {
+        const { data: delReq } = await supabase
+          .from('account_deletion_requests')
+          .select('status')
+          .eq('user_id', supabaseUser.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (delReq && (delReq as any).status === 'approved') {
+          try {
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('account_blocked_notice', 'Your account deletion request has been approved. Access has been disabled.');
+            }
+          } catch {}
+
+          await supabase.auth.signOut();
+          setAuthState({ user: null, isLoading: false, isAuthenticated: false });
+          return;
+        }
+      } catch (e) {
+        // If this check fails, proceed normally; access will be checked again on next login
+      }
+
       const user: User = {
         id: supabaseUser.id,
         email: supabaseUser.email || '',

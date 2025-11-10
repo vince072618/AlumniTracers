@@ -1,4 +1,4 @@
-export type UserRole = 'alumni';
+export type UserRole = 'alumni' | 'admin';
 
 export interface User {
   id: string;
@@ -76,7 +76,10 @@ export type ActivityType =
   | 'profile_update'
   | 'password_change'
   | 'registration'
-  | 'email_verification';
+  | 'email_verification'
+  | 'account_deletion_requested'
+  | 'account_deletion_approved'
+  | 'account_deletion_denied';
 
 export interface ActivityLog {
   id: string;
@@ -109,3 +112,18 @@ export interface Profile {
   created_at: string;
   updated_at?: string;
 }
+
+// Account Deletion Request Domain
+export interface AccountDeletionRequest {
+  id: string;
+  user_id: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'denied';
+  decided_by?: string | null;
+  decided_at?: string | null;
+  decision_note?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type DeletionDecision = 'approved' | 'denied';

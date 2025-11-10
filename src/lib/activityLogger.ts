@@ -24,7 +24,7 @@ export class ActivityLogger {
 
       const clientInfo = this.getClientInfo();
 
-      const { data, error } = await supabase.rpc('log_user_activity', {
+  const { error } = await supabase.rpc('log_user_activity', {
         p_user_id: user.id,
         p_activity_type: activityType,
         p_description: description,
@@ -34,7 +34,7 @@ export class ActivityLogger {
       });
 
       if (error) {
-        console.error('Failed to log activity:', error);
+        console.error('Failed to log activity via RPC:', error);
         // Try direct insert as fallback
         const { error: insertError } = await supabase
           .from('activity_logs')
@@ -85,5 +85,26 @@ export class ActivityLogger {
       : `Profile updated: ${changeCount} fields changed`;
     
     await this.logActivity('profile_update', description, changes);
+  }
+
+  // Deletion workflow events
+  static async logAccountDeletionRequested(reason: string): Promise<void> {
+    await this.logActivity('account_deletion_requested', 'User requested account deletion', { reason });
+  }
+
+  static async logAccountDeletionApproved(targetUserId: string, note?: string): Promise<void> {
+    await this.logActivity(
+      'account_deletion_approved',
+      `Admin approved account deletion request for user ${targetUserId}`,
+      { targetUserId, note: note || null }
+    );
+  }
+
+  static async logAccountDeletionDenied(targetUserId: string, note?: string): Promise<void> {
+    await this.logActivity(
+      'account_deletion_denied',
+      `Admin denied account deletion request for user ${targetUserId}`,
+      { targetUserId, note: note || null }
+    );
   }
 }
