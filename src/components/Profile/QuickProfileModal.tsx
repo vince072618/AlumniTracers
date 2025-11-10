@@ -422,7 +422,7 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
           {/* Employment Status */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Employment Status? <span className="text-red-500">*</span>
+              Employment Status <span className="text-red-500">*</span>
             </label>
             <div className="mt-2 flex items-center space-x-4">
               <label className="inline-flex items-center">
