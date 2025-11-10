@@ -11,29 +11,28 @@ const AuthPage: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden auth-root auth-bg"
+      className="min-h-screen flex items-center justify-center px-4 py-6 sm:py-8 relative overflow-hidden auth-root auth-bg"
     >
   <div className="absolute inset-0 bg-black/40" aria-hidden />
 
       {/* Hero title - visible behind the auth card but above the overlay */}
       {(loginVisible || showGreeting) && (
-        <div className="absolute inset-x-0 top-4 sm:top-6 md:top-8 lg:top-10 xl:top-12 pointer-events-none z-30 flex justify-center auth-hero">
+  <div className="absolute inset-x-0 top-2 sm:top-4 md:top-6 lg:top-8 xl:top-10 pointer-events-none z-30 flex justify-center auth-hero">
           <div className="max-w-5xl text-center px-4">
             {/* Large, responsive hero that scales for mobile and desktop. Reduced max size so it doesn't overlap the card on large screens. */}
             <h1
-              className="font-extrabold text-white drop-shadow-lg leading-tight break-words"
-              style={{ fontSize: 'clamp(28px, 4.5vw, 56px)' }}
+              className="font-extrabold text-white drop-shadow-lg leading-tight break-words text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
             >
               Northern Bukidnon State College
             </h1>
-            <p className="text-white/80 italic" style={{ fontSize: 'clamp(12px, 2.2vw, 18px)' }}>
+            <p className="text-white/80 italic text-xs sm:text-sm md:text-base mt-1">
               Creando futura, Transformationis Vitae, Ductae a Deo
             </p>
           </div>
         </div>
       )}
 
-  <div className={`w-full max-w-4xl relative z-20 flex ${registerVisible ? 'items-center' : 'items-start'} justify-center min-h-[60vh] ${registerVisible ? '' : 'pt-12 md:pt-16 lg:pt-20'} auth-card-wrapper`}>
+  <div className={`w-full max-w-4xl relative z-20 flex ${registerVisible ? 'items-center' : 'items-start'} justify-center min-h-[60vh] ${registerVisible ? '' : 'pt-20 sm:pt-24 md:pt-28 lg:pt-32'} auth-card-wrapper`}>
         {showGreeting ? (
           <PreRegisterGreeting
             onNext={() => {

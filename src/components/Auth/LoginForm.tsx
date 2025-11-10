@@ -89,17 +89,17 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
     }
   }, []);
   return (
-   <div className="w-full max-w-md mx-auto bg-white rounded-2xl shadow-xl p-8 login-card">
-  <div className="text-center mb-8">
-    <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden flex items-center justify-center mx-auto mb-4 bg-white">
+  <div className="w-full max-w-sm sm:max-w-md mx-auto bg-white rounded-2xl shadow-xl px-5 py-6 sm:px-8 sm:py-8 space-y-6 login-card">
+  <div className="text-center mb-6 sm:mb-8 space-y-3">
+    <div className="mx-auto rounded-full overflow-hidden flex items-center justify-center bg-white w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24">
       <img
         src="/logo.jpeg"
         alt="School Logo"
-        className="w-full h-full object-contain"
+        className="w-full h-full object-contain max-w-full"
       />
     </div>
-    <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h2>
-    <p className="text-gray-600">Sign in to access your alumni portal</p>
+    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Welcome Back</h2>
+    <p className="text-gray-600 text-sm sm:text-base">Sign in to access your alumni portal</p>
   </div>
       {showRegisteredAlert && (
         <div className="max-w-md mx-auto mb-4 bg-blue-50 border border-blue-300 text-blue-900 px-4 py-3 rounded-lg relative" role="status" aria-live="polite">
@@ -115,7 +115,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
           </div>
         </div>
       )}
-      <form onSubmit={handleSubmit} className="space-y-6">
+  <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
             Email Address
@@ -128,7 +128,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+              className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm sm:text-base ${
                 errors.email ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="Enter your email"
@@ -149,7 +149,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+              className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm sm:text-base ${
                 errors.password ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="Enter your password"
@@ -168,7 +168,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+          className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium text-sm sm:text-base hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
         >
           {isLoading ? (
             <>
@@ -180,23 +180,23 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
           )}
         </button>
 
-        <div className="text-center">
+        <div className="text-center pt-1">
           <button
             type="button"
             onClick={() => setShowForgotPassword(true)}
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+            className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium"
           >
             Forgot your password?
           </button>
         </div>
       </form>
 
-      <div className="mt-6 text-center">
+      <div className="mt-5 sm:mt-6 text-center">
         <p className="text-gray-600">
           Don't have an account?{' '}
           <button
             onClick={onSwitchToRegister}
-            className="text-blue-600 hover:text-blue-700 font-medium"
+            className="text-blue-600 hover:text-blue-700 font-medium text-sm"
           >
             Sign up here
           </button>
