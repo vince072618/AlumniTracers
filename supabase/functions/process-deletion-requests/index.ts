@@ -2,7 +2,28 @@
 // Scans approved, unprocessed account_deletion_requests, deletes the auth user, and anonymizes profile.
 // Invocation: can be scheduled via Supabase Scheduler or manually invoked by an admin.
 
-import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
+// Provide a lightweight runtime-safe `serve` shim to avoid a static remote import that may not resolve
+// in some TypeScript tooling environments; this uses the edge `fetch` event when available and falls
+// back to a dynamic import of the std server at runtime.
+function serve(handler: (req: Request) => Promise<Response> | Response) {
+  if (typeof addEventListener === 'function') {
+    addEventListener('fetch', (event: any) => {
+      event.respondWith(handler(event.request));
+    });
+    return;
+  }
+
+  // Fallback: attempt to dynamically import the std server at runtime (works when Deno can fetch)
+  (async () => {
+    try {
+      // @ts-ignore: dynamic import only used at runtime; some tooling cannot resolve remote modules
+      const mod = await import('https://deno.land/std@0.224.0/http/server.ts');
+      mod.serve(handler);
+    } catch (err) {
+      throw new Error('serve: no runtime fetch handler available and dynamic import failed: ' + String(err));
+    }
+  })();
+}
 
 interface DeletionRow {
   id: string;
@@ -19,7 +40,7 @@ const json = (body: any, init: ResponseInit = {}) => new Response(JSON.stringify
 
 serve(async (req: Request) => {
   // Basic admin secret check (set this env var in your function config)
-  const adminSecret = Deno.env.get('DELETION_ADMIN_SECRET');
+  const adminSecret = ((globalThis as any).Deno?.env?.get('DELETION_ADMIN_SECRET')) ?? (typeof process !== 'undefined' ? process.env['DELETION_ADMIN_SECRET'] : undefined);
   if (!adminSecret) {
     return json({ error: 'Function misconfigured: missing DELETION_ADMIN_SECRET' }, { status: 500 });
   }
@@ -29,11 +50,11 @@ serve(async (req: Request) => {
   }
 
   try {
-    const url = Deno.env.get('SUPABASE_URL');
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    if (!url || !serviceKey) {
-      return json({ error: 'Missing service credentials' }, { status: 500 });
-    }
+  const url = ((globalThis as any).Deno?.env?.get('SUPABASE_URL')) ?? (typeof process !== 'undefined' ? process.env['SUPABASE_URL'] : undefined);
+  const serviceKey = ((globalThis as any).Deno?.env?.get('SUPABASE_SERVICE_ROLE_KEY')) ?? (typeof process !== 'undefined' ? process.env['SUPABASE_SERVICE_ROLE_KEY'] : undefined);
+  if (!url || !serviceKey) {
+    return json({ error: 'Missing service credentials' }, { status: 500 });
+  }
 
     // Use service key for admin operations
     const headers = {
