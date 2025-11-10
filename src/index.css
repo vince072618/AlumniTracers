@@ -1,3 +1,84 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Use imports instead of @tailwind to avoid unknown at-rule errors */
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+/* Generic small-screen adjustments (phones up to 400px width) */
+@media (max-width: 400px) {
+	.login-card {
+		padding: 1.25rem 1rem; /* compact but readable */
+		border-radius: 1rem;
+		width: 100%;
+	}
+	.login-card h2 { font-size: 1.25rem; }
+	.login-card p { font-size: 0.8rem; }
+	.login-card input,
+	.login-card button[type="submit"] { padding-top: 0.625rem; padding-bottom: 0.625rem; }
+}
+
+/* Slightly larger phones (401px–480px) */
+@media (min-width:401px) and (max-width:480px) {
+	.login-card { padding: 1.75rem 1.25rem; }
+}
+
+/* Tablets adjust spacing so hero and card breathe */
+@media (min-width: 768px) and (max-width: 1023px) {
+	.auth-card-wrapper { padding-left: 1rem; padding-right: 1rem; }
+	.login-card { padding: 2.25rem 2rem; }
+}
+
+/* Large desktops: slightly larger card for visual balance */
+@media (min-width: 1536px) {
+	.login-card { padding: 3rem 3rem; }
+}
+
+/* Responsive NBSC background that scales across phones and desktops */
+.auth-bg {
+	/* Base gradient + image fallback chain */
+	background:
+		linear-gradient(135deg, rgba(11,94,215,1) 0%, rgba(9,63,138,1) 50%, rgba(6,34,63,1) 100%),
+		url('/nbsc-background.jpg');
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: cover; /* fill viewport while preserving aspect */
+}
+
+/* Use SVG fallback if JPG is missing; most browsers will load the first; the second remains a fallback in markup */
+.auth-bg:before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	background-image: url('/nbsc-background.svg');
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: cover;
+	opacity: 0; /* kept as fallback hook; can be enabled if needed */
+}
+
+/* Avoid jumpy mobile viewport by using dynamic viewport units */
+.auth-root { min-height: 100dvh; }
+
+/* Tweak composition for very tall phones: keep subject centered and avoid over-zoom */
+@media (max-width: 640px) {
+	.auth-bg {
+		background-position: center top; /* keep crest visible on most phones */
+	}
+}
+
+/* Landscape phones/tablets: keep cover but center horizontally */
+@media (max-height: 480px) and (orientation: landscape) {
+	.auth-bg {
+		background-position: center center;
+	}
+}
+
+/* Large desktops: prevent excessive zoom blur by slightly contain then add padding via overlay card area */
+@media (min-width: 1440px) {
+	.auth-bg {
+		background-size: cover; /* remain cover but image is high-res; if blur is seen, switch to contain */
+	}
+}
+
+/* Ensure the form wrapper never overflows on small screens */
+.auth-card-wrapper { width: 100%; padding-left: 0.5rem; padding-right: 0.5rem; }

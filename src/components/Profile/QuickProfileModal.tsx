@@ -114,26 +114,41 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
     setTouched({});
   }, [open, initial]);
 
+  // When employment status changes, reset dependent fields so user must answer follow-ups explicitly for each status.
+  React.useEffect(() => {
+    if (employmentStatus === '') return;
+    // Always require re-answering these when switching between statuses
+    setJobRelatedCourse(null);
+    setReceivedAward(null);
+    setAwardDetails('');
+
+    // If leaving 'employed' clear employment type / contract type; self-employed should not retain prior selections
+    if (employmentStatus !== 'employed') {
+      setEmploymentType('');
+      setContractType('');
+    }
+  }, [employmentStatus]);
+
   const isValid = React.useMemo(() => {
     const hasScope = locationScope === 'Philippines' || locationScope === 'International';
     const hasRegion = hasScope && locationScope === 'Philippines' ? region.trim().length > 0 : true;
     const hasSpecific = specificLocation.trim().length > 0;
     const hasSkills = skills.trim().length > 0;
-  const hasEmployment = employmentStatus === 'employed' || employmentStatus === 'unemployed' || employmentStatus === 'self-employed';
+    const hasEmployment = employmentStatus === 'employed' || employmentStatus === 'unemployed' || employmentStatus === 'self-employed';
 
-    const ifEmployedValid =
-      employmentStatus === 'unemployed' ||
-      (jobRelatedCourse !== null && receivedAward !== null &&
-        // For regular employed workers require employmentType and contractType where applicable.
-        (employmentStatus === 'employed'
-          ? (employmentType !== '' && (employmentType === 'Private'
-              ? ['Regular', 'Contractual'].includes(contractType)
-              : ['Regular', 'Job Order', 'Contractual', 'Casual'].includes(contractType)))
-          : true // self-employed: don't require employmentType/contractType
-        )
-      );
+    // Follow-ups are required only for employed; self-employed behaves like unemployed (no follow-ups required).
+    const followUpsAnswered = employmentStatus === 'employed' ? (jobRelatedCourse !== null && receivedAward !== null) : true;
 
-    return hasScope && hasRegion && hasSpecific && hasSkills && hasEmployment && ifEmployedValid;
+    // Additional validations only for employed workers (private/government contract details)
+    const employedExtrasValid = employmentStatus !== 'employed' ? true : (
+      employmentType !== '' && (
+        employmentType === 'Private'
+          ? ['Regular', 'Contractual'].includes(contractType)
+          : ['Regular', 'Job Order', 'Contractual', 'Casual'].includes(contractType)
+      )
+    );
+
+    return hasScope && hasRegion && hasSpecific && hasSkills && hasEmployment && followUpsAnswered && employedExtrasValid;
   }, [locationScope, region, specificLocation, skills, employmentStatus, jobRelatedCourse, receivedAward, employmentType, contractType]);
 
   // Derive suggestions based on the last partial token user is typing
@@ -407,7 +422,7 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
           {/* Employment Status */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Are you currently employed or unemployed? <span className="text-red-500">*</span>
+              Employment Status? <span className="text-red-500">*</span>
             </label>
             <div className="mt-2 flex items-center space-x-4">
               <label className="inline-flex items-center">
@@ -425,8 +440,8 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
             </div>
           </div>
 
-          {/* Conditional questions for employed users */}
-          {(employmentStatus === 'employed' || employmentStatus === 'self-employed') && (
+          {/* Conditional questions for employed users only */}
+          {employmentStatus === 'employed' && (
             <>
               {/* Job Related */}
               <div>
@@ -471,7 +486,7 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
                 )}
               </div>
 
-              {/* Employment Type (only for employed, not for self-employed) */}
+              {/* Employment Type (only for employed) */}
               {employmentStatus === 'employed' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700">

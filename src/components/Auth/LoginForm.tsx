@@ -89,9 +89,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
     }
   }, []);
   return (
-   <div className="w-full max-w-md mx-auto bg-white rounded-2xl shadow-xl p-8">
+   <div className="w-full max-w-md mx-auto bg-white rounded-2xl shadow-xl p-8 login-card">
   <div className="text-center mb-8">
-    <div className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center mx-auto mb-4 bg-white">
+    <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden flex items-center justify-center mx-auto mb-4 bg-white">
       <img
         src="/logo.jpeg"
         alt="School Logo"
