@@ -180,6 +180,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isVerified: (typeof finalProfile?.is_verified === 'boolean'
           ? Boolean(finalProfile?.is_verified)
           : (supabaseUser.email_confirmed_at !== null)),
+        // Whether user completed quick profile questionnaire
+        completedQuickQuestions: Boolean(finalProfile?.completed_quick_questions),
         createdAt: new Date(supabaseUser.created_at),
       };
 
@@ -206,7 +208,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
           } catch {}
 
-          // Ask DB if questionnaire exists
+          // If profile already records completion, skip modal
+          if (finalProfile?.completed_quick_questions === true) {
+            try { if (typeof window !== 'undefined') localStorage.setItem(localKey, '1'); } catch {}
+            setShowQuickProfileModal(false);
+            return;
+          }
+
+          // Backward compatibility: if user_profile_questions exists for this user, consider it completed and set flag on profile
           const { data: qpRow, error: qpErr } = await supabase
             .from('user_profile_questions')
             .select('id')
@@ -214,7 +223,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             .single();
 
           if (!qpErr && qpRow?.id) {
-            // Completed – remember locally
+            // Mark profile as completed for future checks
+            try {
+              await supabase.from('profiles').update({ completed_quick_questions: true }).eq('id', supabaseUser.id);
+            } catch (e) {
+              // non-fatal
+            }
             try { if (typeof window !== 'undefined') localStorage.setItem(localKey, '1'); } catch {}
             setShowQuickProfileModal(false);
             return;

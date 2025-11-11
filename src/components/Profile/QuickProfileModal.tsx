@@ -100,18 +100,65 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
 
   React.useEffect(() => {
     if (!open) return;
-    setLocationScope(initial.locationScope ?? '');
-    setRegion(initial.region || '');
-    setSpecificLocation(initial.specificLocation || '');
-    setSkills('');
-    setEmploymentStatus('');
-    setJobRelatedCourse(null);
-    setReceivedAward(null);
-    setAwardDetails('');
-    setEmploymentType('');
-    setContractType('');
-    setError(null);
-    setTouched({});
+    (async () => {
+      setError(null);
+      setTouched({});
+      // Try to fetch existing quick profile answers for this user and pre-fill
+      try {
+        if (user?.id) {
+          const { data: existing, error } = await supabase
+            .from('user_profile_questions')
+            .select('*')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (!error && existing && existing.id) {
+            // Prefill values from DB
+            const db = existing as any;
+            // Determine location scope and specific location
+            if (db.country === 'Philippines' || db.region) {
+              setLocationScope('Philippines');
+              setRegion(db.region || '');
+              setSpecificLocation(db.province || db.province || '');
+            } else if (db.country && db.country !== 'Philippines') {
+              setLocationScope('International');
+              setRegion('International');
+              setSpecificLocation(db.country || '');
+            } else {
+              // Fallback to initial
+              setLocationScope(initial.locationScope ?? '');
+              setRegion(initial.region || '');
+              setSpecificLocation(initial.specificLocation || '');
+            }
+
+            setSkills(db.skills || '');
+            // map DB employment_status to local values
+            const emp = (db.employment_status || '') as string;
+            setEmploymentStatus(emp === 'Employed' ? 'employed' : (emp === 'Self-employed' ? 'self-employed' : 'unemployed'));
+            setJobRelatedCourse(typeof db.job_related_course === 'boolean' ? db.job_related_course : null);
+            setReceivedAward(typeof db.received_award === 'boolean' ? db.received_award : null);
+            setAwardDetails(db.award_details || '');
+            setEmploymentType(db.employment_type || '');
+            setContractType(db.contract_type || '');
+            return;
+          }
+        }
+      } catch (e) {
+        // ignore and fall back to initial
+      }
+
+      // No existing answers; use initial values
+      setLocationScope(initial.locationScope ?? '');
+      setRegion(initial.region || '');
+      setSpecificLocation(initial.specificLocation || '');
+      setSkills('');
+      setEmploymentStatus('');
+      setJobRelatedCourse(null);
+      setReceivedAward(null);
+      setAwardDetails('');
+      setEmploymentType('');
+      setContractType('');
+    })();
   }, [open, initial]);
 
   // When employment status changes, reset dependent fields so user must answer follow-ups explicitly for each status.
@@ -258,7 +305,7 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
         if (insertErr) throw insertErr;
       }
 
-      // Update profile location
+      // Update profile location and mark questionnaire completed
       let combinedLocation = '';
       if (locationScope === 'Philippines') {
         combinedLocation = region ? `${region} - ${specificLocation}` : '';
@@ -266,11 +313,15 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
         combinedLocation = `International - ${specificLocation}`;
       }
 
-      const { error: profileErr } = await supabase
-        .from('profiles')
-        .update({ location: combinedLocation || null })
-        .eq('id', user.id);
-      if (profileErr) console.warn('Failed to update profiles.location:', profileErr);
+      try {
+        const { error: profileErr } = await supabase
+          .from('profiles')
+          .update({ location: combinedLocation || null, completed_quick_questions: true })
+          .eq('id', user.id);
+        if (profileErr) console.warn('Failed to update profiles.location/completed_quick_questions:', profileErr);
+      } catch (e) {
+        console.warn('Failed to update profile completed flag:', e);
+      }
 
       try {
         setShowQuickProfileModal && setShowQuickProfileModal(false);
@@ -278,7 +329,7 @@ export const QuickProfileModal: React.FC<QuickProfileModalProps> = ({
       if (refreshUser) await refreshUser();
 
       onApplied({ locationScope, region, specificLocation });
-      // Mark questionnaire as completed so it won't pop up again on future logins
+      // Also set a local cache to avoid re-querying immediately
       try { if (typeof window !== 'undefined') localStorage.setItem(`gap_completed_${user.id}`, '1'); } catch {}
     } catch (e: any) {
       console.error('Error submitting quick profile answers:', e);

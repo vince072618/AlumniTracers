@@ -15,6 +15,8 @@ export interface User {
   locationVerified?: boolean;
   phoneNumber?: string;
   isVerified: boolean;
+  // whether the user completed the quick profile questions
+  completedQuickQuestions?: boolean;
   createdAt: Date;
 }
 
@@ -106,6 +108,7 @@ export interface Profile {
   location_verified?: boolean;
   // alumni verification status managed by admin
   is_verified?: boolean;
+  completed_quick_questions?: boolean;
   verified_at?: string | null;
   verified_by?: string | null;
   phone_number?: string;
