@@ -1,6 +1,7 @@
 import React from 'react';
 import { User, GraduationCap, Lock, X, Megaphone, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface SidebarProps {
   activeTab: string;
@@ -16,6 +17,72 @@ const Sidebar: React.FC<SidebarProps> = ({
   onMobileMenuClose 
 }) => {
   const [isAdmin, setIsAdmin] = React.useState(false);
+  const { user } = useAuth();
+  const [unseenCount, setUnseenCount] = React.useState<number>(0);
+
+  const storageKey = React.useMemo(() => `announcements_last_seen_${user?.id || 'anon'}`, [user?.id]);
+
+  const getLastSeen = React.useCallback(() => {
+    try {
+      const v = localStorage.getItem(storageKey);
+      return v ? new Date(v) : new Date(0);
+    } catch {
+      return new Date(0);
+    }
+  }, [storageKey]);
+
+  // Load unseen count and subscribe to new announcements
+  React.useEffect(() => {
+    let mounted = true;
+    if (!user) return;
+
+    const load = async () => {
+      try {
+        const lastSeen = getLastSeen();
+        const { data, error } = await supabase
+          .from('announcements')
+          .select('id,published_at,created_at')
+          .eq('published', true)
+          .order('published_at', { ascending: false, nullsFirst: false })
+          .order('created_at', { ascending: false })
+          .limit(500);
+        if (error) throw error;
+        const rows = (data ?? []) as Array<any>;
+        const count = rows.filter(r => {
+          const ts = r.published_at || r.created_at;
+          if (!ts) return false;
+          return new Date(ts) > lastSeen;
+        }).length;
+        if (mounted) setUnseenCount(count);
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    load();
+
+    const ch = supabase
+      .channel('sidebar-announcements')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'announcements' }, (payload) => {
+        try {
+          const record = (payload as any).new || (payload as any).record || (payload as any).payload?.record;
+          if (!record) return;
+          if (!record.published) return;
+          const ts = record.published_at || record.created_at;
+          if (!ts) return;
+          const lastSeen = getLastSeen();
+          if (new Date(ts) > lastSeen) {
+            setUnseenCount(c => c + 1);
+          }
+        } catch (e) {}
+      })
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(ch);
+    };
+  }, [user, getLastSeen]);
 
   React.useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -91,7 +158,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                 }`}
               >
                 <Icon size={20} />
-                <span className="font-medium">{item.label}</span>
+                <div className="flex-1 flex items-center justify-between">
+                  <span className="font-medium">{item.label}</span>
+                  {item.id === 'announcements' && unseenCount > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-600 text-white text-xs font-semibold">
+                      {unseenCount > 9 ? '9+' : unseenCount}
+                    </span>
+                  )}
+                </div>
               </button>
             );
           })}

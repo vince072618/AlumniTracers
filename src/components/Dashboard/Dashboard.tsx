@@ -23,6 +23,15 @@ const Dashboard: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // When user navigates to announcements tab, notify header to mark announcements as seen
+  useEffect(() => {
+    if (activeTab === 'announcements') {
+      try {
+        window.dispatchEvent(new CustomEvent('announcements-seen'));
+      } catch {}
+    }
+  }, [activeTab]);
+
   const handleMobileMenuToggle = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
@@ -55,7 +64,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
-      <Header onMobileMenuToggle={handleMobileMenuToggle} />
+      <Header onMobileMenuToggle={handleMobileMenuToggle} onOpenAnnouncements={() => setActiveTab('announcements')} />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar 
           activeTab={activeTab} 
