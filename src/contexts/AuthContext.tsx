@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import { signInWithPasswordLog, signOutWithLog } from '../lib/activityLog';
 import { validateEmail } from '../lib/validation';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { User, AuthState, LoginData, RegisterData } from '../types';
@@ -289,19 +290,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setAuthState(prev => ({ ...prev, isLoading: true }));
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
+      const res = await signInWithPasswordLog(supabase, { email: data.email, password: data.password });
 
-      if (error) {
-        throw error;
+      if (res.error) {
+        throw res.error;
       }
-
-      // Log successful login
-      setTimeout(() => {
-        ActivityLogger.logLogin();
-      }, 1000);
 
       // Navigate to home after login; auth listener will finalize state
       try { if (typeof window !== 'undefined') window.location.href = '/'; } catch {}
@@ -388,7 +381,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Log logout before signing out
     ActivityLogger.logLogout();
     
-    supabase.auth.signOut().then(() => {
+    signOutWithLog(supabase).then(() => {
       setAuthState({
         user: null,
         isLoading: false,
