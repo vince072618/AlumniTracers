@@ -58,6 +58,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          try {
+            if (typeof window !== 'undefined') {
+              window.location.href = '/auth/reset-password';
+            }
+          } catch {}
+          return;
+        }
         if (session?.user) {
           // Always trigger quick modal on explicit SIGNED_IN events (each login)
           const shouldTrigger = event === 'SIGNED_IN';

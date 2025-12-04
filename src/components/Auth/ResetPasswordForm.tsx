@@ -13,21 +13,32 @@ const ResetPasswordForm: React.FC = () => {
   const [isValidSession, setIsValidSession] = useState(false);
 
   useEffect(() => {
-    // Check if we have a valid session for password reset
+    // Listen for Supabase recovery event from email link
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        // User landed here from the recovery link; allow setting a new password
+        setIsValidSession(true);
+        setError('');
+      }
+    });
+
+    // Also check session in case the URL already established it
     const checkSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (session && !error) {
           setIsValidSession(true);
-        } else {
-          setError('Invalid or expired reset link. Please request a new password reset.');
         }
-      } catch (err) {
-        setError('Invalid or expired reset link. Please request a new password reset.');
+      } catch {
+        // ignore; onAuthStateChange will catch recovery
       }
     };
 
     checkSession();
+
+    return () => {
+      subscription.subscription.unsubscribe();
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

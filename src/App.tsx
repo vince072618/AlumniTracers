@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthPage from './components/Auth/AuthPage';
 import AuthCallback from './components/Auth/AuthCallback';
 import ResetPasswordForm from './components/Auth/ResetPasswordForm';
+import ForgotPasswordForm from './components/Auth/ForgotPasswordForm';
 import Dashboard from './components/Dashboard/Dashboard';
 
 const AppContent: React.FC = () => {
@@ -16,6 +17,18 @@ const AppContent: React.FC = () => {
   // Handle password reset route
   if (window.location.pathname === '/auth/reset-password') {
     return <ResetPasswordForm />;
+  }
+
+  // Handle forgot password route
+  if (window.location.pathname === '/auth/forgot-password') {
+    return (
+      <div className="min-h-screen auth-root auth-bg flex items-center justify-center px-4 py-6">
+        <div className="absolute inset-0 bg-black/40" aria-hidden />
+        <div className="w-full max-w-4xl relative z-20 flex items-start justify-center pt-20 sm:pt-24 md:pt-28 lg:pt-32 auth-card-wrapper">
+          <ForgotPasswordForm onBackToLogin={() => { window.location.href = '/'; }} />
+        </div>
+      </div>
+    );
   }
 
   if (isLoading) {
