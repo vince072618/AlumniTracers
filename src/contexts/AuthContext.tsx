@@ -303,7 +303,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ActivityLogger.logLogin();
       }, 1000);
 
-      // User state will be updated by the auth state change listener
+      // Navigate to home after login; auth listener will finalize state
+      try { if (typeof window !== 'undefined') window.location.href = '/'; } catch {}
     } catch (error) {
       setAuthState(prev => ({ ...prev, isLoading: false }));
       throw error;
@@ -393,6 +394,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isLoading: false,
         isAuthenticated: false,
       });
+      try { if (typeof window !== 'undefined') window.location.href = '/'; } catch {}
     }).catch((error) => {
       console.error('Error signing out:', error);
     });
