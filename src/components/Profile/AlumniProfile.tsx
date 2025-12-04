@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CreditCard as Edit3, Save, X, User, GraduationCap, Briefcase, Building, MapPin, Phone, Mail, Calendar, Loader2, ShieldCheck, ShieldAlert } from 'lucide-react';
 import YearSelect from '../Shared/YearSelect';
 import CustomSelect from '../Shared/CustomSelect';
@@ -13,6 +13,17 @@ const AlumniProfile: React.FC = () => {
   const { user, refreshUser } = useAuth();
   const { showQuickProfileModal, setShowQuickProfileModal } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [showVerifiedModal, setShowVerifiedModal] = useState(false);
+  const prevVerifiedRef = useRef<boolean>(Boolean(user?.isVerified));
+
+  useEffect(() => {
+    const wasVerified = prevVerifiedRef.current;
+    const nowVerified = Boolean(user?.isVerified);
+    if (!wasVerified && nowVerified) {
+      setShowVerifiedModal(true);
+    }
+    prevVerifiedRef.current = nowVerified;
+  }, [user?.isVerified]);
   const [isLoading, setIsLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -449,6 +460,44 @@ const AlumniProfile: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Pending Verification Notice */}
+          {!user?.isVerified && (
+            <div className="mb-6">
+              <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+                <h4 className="font-semibold text-yellow-800 mb-1">Account Verification Pending</h4>
+                <p className="text-yellow-900 text-sm">
+                  Your account is currently awaiting verification by the Alumni Coordinator. This step ensures alumni records are accurate.
+                </p>
+                <ul className="mt-2 text-yellow-900 text-sm list-disc list-inside">
+                  <li>Reason: Admin hasn’t completed your verification yet.</li>
+                  <li>Action: No action required — please wait for review.</li>
+                  <li>Status update: Once verified, your profile will show “Verified”.</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {showVerifiedModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-black/40" onClick={() => setShowVerifiedModal(false)} />
+              <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+                <div className="text-center">
+                  <div className="mx-auto mb-3 inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-white w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <h4 className="text-lg font-semibold text-gray-900">Account Verified</h4>
+                  <p className="mt-1 text-gray-600 text-sm">Your account has been verified by the Alumni Coordinator. You now have full access features.</p>
+                  <button
+                    className="mt-4 w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                    onClick={() => setShowVerifiedModal(false)}
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Profile Form */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
