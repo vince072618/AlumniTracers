@@ -5,6 +5,34 @@ import AuthCallback from './components/Auth/AuthCallback';
 import ResetPasswordForm from './components/Auth/ResetPasswordForm';
 import ForgotPasswordForm from './components/Auth/ForgotPasswordForm';
 import Dashboard from './components/Dashboard/Dashboard';
+import NotAlumniNotice from './pages/NotAlumniNotice';
+import DeleteAccountRequest from './components/Profile/DeleteAccountRequest';
+import { supabase } from './lib/supabase';
+
+function BlockNotAlumni({ children }: { children: React.ReactNode }) {
+  const [state, setState] = React.useState<'checking'|'allow'|'blocked'>('checking');
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const { data: u } = await supabase.auth.getUser();
+        const id = u.user?.id;
+        if (!id) { setState('blocked'); return; }
+        const { data } = await supabase.from('profiles').select('role').eq('id', id).single();
+        const blocked = data?.role === 'not_alumni';
+        setState(blocked ? 'blocked' : 'allow');
+        if (blocked) {
+          try { if (typeof window !== 'undefined') window.location.href = '/not-alumni'; } catch {}
+        }
+      } catch {
+        setState('allow');
+      }
+    })();
+  }, []);
+
+  if (state === 'checking') return null;
+  return <>{children}</>;
+}
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -42,7 +70,29 @@ const AppContent: React.FC = () => {
     );
   }
 
-  return isAuthenticated ? <Dashboard /> : <AuthPage />;
+  // Handle not-alumni notice route
+  if (window.location.pathname === '/not-alumni') {
+    return <NotAlumniNotice />;
+  }
+
+  // Handle account deletion request route
+  if (window.location.pathname === '/request-deletion') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-6">
+        <div className="w-full max-w-3xl">
+          <DeleteAccountRequest />
+        </div>
+      </div>
+    );
+  }
+
+  return isAuthenticated ? (
+    <BlockNotAlumni>
+      <Dashboard />
+    </BlockNotAlumni>
+  ) : (
+    <AuthPage />
+  );
 };
 
 function App() {
